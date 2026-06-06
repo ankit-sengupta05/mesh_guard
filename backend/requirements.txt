@@ -1,0 +1,67 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# AgentOps Security Mesh — Backend Python Dependencies
+# All versions pinned for reproducible builds.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Web Framework ──────────────────────────────────────────────────────────
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+websockets==13.1
+python-multipart==0.0.18
+
+# ── Configuration ─────────────────────────────────────────────────────────
+pydantic==2.10.3
+pydantic-settings==2.6.1
+
+# ── Redis (async) ─────────────────────────────────────────────────────────
+redis[asyncio]==5.2.1
+hiredis==3.1.0
+
+# ── Neo4j (async driver) ──────────────────────────────────────────────────
+neo4j==5.27.0
+
+# ── LangGraph + LangChain ─────────────────────────────────────────────────
+langgraph==0.2.56
+langchain==0.3.13
+langchain-core==0.3.28
+langchain-openai==0.2.14
+langchain-community==0.3.13
+
+# ── Azure OpenAI SDK ──────────────────────────────────────────────────────
+openai==1.58.1
+
+# ── HTTP Client ───────────────────────────────────────────────────────────
+httpx==0.28.1
+aiohttp==3.11.10
+
+# ── Docker SDK (sandbox execution) ───────────────────────────────────────
+docker==7.1.0
+
+# ── Security / Auth ───────────────────────────────────────────────────────
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+cryptography==44.0.0
+
+# ── NLP / Embedding (prompt injection detection) ──────────────────────────
+sentence-transformers==3.3.1
+numpy==1.26.4
+scikit-learn==1.6.0
+torch==2.5.1
+transformers==4.47.1
+
+# ── MCP (Model Context Protocol) ──────────────────────────────────────────
+mcp==1.3.0
+
+# ── Utilities ─────────────────────────────────────────────────────────────
+python-dotenv==1.0.1
+msgpack==1.1.0
+tenacity==9.0.0
+structlog==24.4.0
+rich==13.9.4
+
+# ── Testing ───────────────────────────────────────────────────────────────
+pytest==8.3.4
+pytest-asyncio==0.24.0
+pytest-cov==6.0.0
+httpx==0.28.1
+anyio==4.7.0
