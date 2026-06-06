@@ -40,6 +40,53 @@
 | **Trust Layer** | Neo4j | Graph database representing nodes (agents) and edges (trust metrics). |
 | **Memory** | Redis | Ephemeral and snapshotted memory management for rollback capabilities. |
 
+### System Flow
+```mermaid
+graph TD
+    Client[React Frontend Dashboard] -->|REST / WebSockets| API[FastAPI Gateway]
+    API -->|State Execution| LangGraph[LangGraph Swarm Orchestrator]
+    API -->|Stream Events| Client
+
+    subgraph Security Mesh
+        API -.-> Firewall[Prompt Injection Firewall]
+        API -.-> Anomaly[Anomaly Detector]
+        API -.-> Healing[Self-Healing Daemon]
+    end
+
+    subgraph Agent Swarm
+        LangGraph --> Planner[Planner Agent]
+        LangGraph --> Coder[Coder Agent]
+        LangGraph --> Web[Web Agent]
+        LangGraph --> Sentinel[Sentinel Agent]
+        LangGraph --> Validator[Validator Agent]
+    end
+
+    subgraph Persistence & Trust
+        LangGraph --> Neo4j[(Neo4j Trust Graph)]
+        LangGraph --> Redis[(Redis Memory & Snapshots)]
+        Firewall --> Neo4j
+        Healing --> Redis
+    end
+```
+
+### Swarm Orchestration StateGraph
+```mermaid
+stateDiagram-v2
+    [*] --> PlanTask: User Input
+
+    PlanTask --> ExecuteStep: Decomposed Task Steps
+    ExecuteStep --> ValidateOutput: Sub-agent execution
+
+    ValidateOutput --> SentinelCheck: Output Approved
+    ValidateOutput --> ExecuteStep: Output Rejected (Retry)
+
+    SentinelCheck --> FinalizeTask: Security Cleared
+    SentinelCheck --> RecoveryMode: 🚨 Threat Detected!
+
+    RecoveryMode --> ExecuteStep: Memory Rolled Back & Restored
+    FinalizeTask --> [*]: Task Completed
+```
+
 ---
 
 ## 🚀 Getting Started
