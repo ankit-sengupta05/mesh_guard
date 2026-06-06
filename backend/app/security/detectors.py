@@ -19,7 +19,6 @@ import logging
 import os
 import re
 from dataclasses import dataclass, field
-from typing import Optional
 
 from backend.app.security.patterns import (
     INJECTION_PATTERNS,
@@ -90,8 +89,7 @@ class ThreatResult:
 # ---------------------------------------------------------------------------
 
 _URL_RE = re.compile(
-    r"(?i)\b(?:https?://|ftp://|file://|dict://|gopher://|ldap://)"
-    r"[^\s\"'<>)\]}{,;]+",
+    r"(?i)\b(?:https?://|ftp://|file://|dict://|gopher://|ldap://)" r"[^\s\"'<>)\]}{,;]+",
     re.IGNORECASE,
 )
 
@@ -307,9 +305,16 @@ class ToolResponseDetector:
             parsed = json.loads(content)
             if isinstance(parsed, dict):
                 suspicious_fields = {
-                    "instruction", "directive", "system_message",
-                    "new_role", "role", "execute", "eval", "exec",
-                    "system_prompt", "command",
+                    "instruction",
+                    "directive",
+                    "system_message",
+                    "new_role",
+                    "role",
+                    "execute",
+                    "eval",
+                    "exec",
+                    "system_prompt",
+                    "command",
                 }
                 found_fields = suspicious_fields & set(k.lower() for k in parsed.keys())
                 if found_fields:
@@ -471,9 +476,7 @@ class SemanticAnomalyDetector:
             logger.warning("SemanticAnomalyDetector: LLM returned non-JSON: %s", exc)
             result.details["error"] = f"JSON parse error: {exc}"
         except Exception as exc:  # noqa: BLE001
-            logger.error(
-                "SemanticAnomalyDetector: LLM call failed: %s", exc, exc_info=True
-            )
+            logger.error("SemanticAnomalyDetector: LLM call failed: %s", exc, exc_info=True)
             result.details["error"] = str(exc)
 
         return result

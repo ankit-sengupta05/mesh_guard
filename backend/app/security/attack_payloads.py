@@ -14,6 +14,7 @@ from typing import Any
 @dataclass
 class AttackScenario:
     """Defines a single simulated attack scenario."""
+
     name: str
     description: str
     payload: Any

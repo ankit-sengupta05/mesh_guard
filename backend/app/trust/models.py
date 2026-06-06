@@ -14,7 +14,6 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-
 # ---------------------------------------------------------------------------
 # Enumerations
 # ---------------------------------------------------------------------------
@@ -152,9 +151,7 @@ class Permission(BaseModel):
         try:
             uuid.UUID(v)
         except ValueError as exc:
-            raise ValueError(
-                f"'granted_by' must be 'SYSTEM' or a valid UUID; got '{v}'."
-            ) from exc
+            raise ValueError(f"'granted_by' must be 'SYSTEM' or a valid UUID; got '{v}'.") from exc
         return v
 
     @model_validator(mode="after")
@@ -229,9 +226,7 @@ class TrustEdge(BaseModel):
     def anomaly_count_within_interactions(self) -> "TrustEdge":
         """Anomaly count cannot exceed total interaction count."""
         if self.anomaly_count > self.interaction_count:
-            raise ValueError(
-                "'anomaly_count' cannot exceed 'interaction_count'."
-            )
+            raise ValueError("'anomaly_count' cannot exceed 'interaction_count'.")
         return self
 
     @property

@@ -32,9 +32,9 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 TRUST_THRESHOLDS: Final[dict[str, float]] = {
-    "SUSPEND": 0.2,   # Below this → automatic suspension candidate
-    "WARN": 0.4,      # Below this → emit warning, restrict optional resources
-    "HEALTHY": 0.7,   # Above this → fully trusted
+    "SUSPEND": 0.2,  # Below this → automatic suspension candidate
+    "WARN": 0.4,  # Below this → emit warning, restrict optional resources
+    "HEALTHY": 0.7,  # Above this → fully trusted
 }
 
 # ---------------------------------------------------------------------------
@@ -219,23 +219,17 @@ class TrustScorer:
 
         # 2. Gather edge statistics from the full graph snapshot
         snapshot = await self._graph.get_full_graph()
-        outbound_edges = [
-            e for e in snapshot.edges if e.from_agent_id == agent_id
-        ]
+        outbound_edges = [e for e in snapshot.edges if e.from_agent_id == agent_id]
 
         total_interactions: int = sum(e.interaction_count for e in outbound_edges)
         total_anomalies: int = sum(e.anomaly_count for e in outbound_edges)
-        anomaly_rate: float = (
-            total_anomalies / total_interactions if total_interactions else 0.0
-        )
+        anomaly_rate: float = total_anomalies / total_interactions if total_interactions else 0.0
 
         # 3. Compute sub-scores
         vol_score = self._interaction_volume_score(total_interactions)
         anom_score = self._anomaly_rate_score(anomaly_rate)
         age_score = self._agent_age_score(agent.created_at)
-        viol_score = self._violation_penalty_score(
-            self._enforcer.violation_count(agent_id)
-        )
+        viol_score = self._violation_penalty_score(self._enforcer.violation_count(agent_id))
 
         # 4. Weighted composite
         composite = (
@@ -396,9 +390,7 @@ class TrustScorer:
                     exc_info=True,
                 )
 
-        logger.info(
-            "Bulk score recalculation complete: %d agents processed.", len(results)
-        )
+        logger.info("Bulk score recalculation complete: %d agents processed.", len(results))
         return results
 
     async def score_report(self, agent_id: str) -> dict:

@@ -27,25 +27,15 @@ from backend.app.graph.state import (
     StepResult,
     SwarmState,
     current_step_description,
-    is_final_step,
     recovery_attempt_count,
 )
 
 if TYPE_CHECKING:
-    from backend.app.graph.agents import (
-        create_code_agent,
-        create_planner_agent,
-        create_validator_agent,
-        create_sentinel_agent,
-        create_web_agent,
-        create_api_agent,
-    )
     from backend.app.memory.manager import AgentMemoryManager
     from backend.app.memory.snapshots import MemorySnapshotManager
     from backend.app.security.events import SecurityEventEmitter, SecurityEvent
     from backend.app.security.firewall import PromptInjectionFirewall
     from backend.app.trust.graph import AsyncNeo4jTrustGraph
-    from backend.app.trust.models import AgentIdentity
     from backend.app.trust.permissions import PermissionEnforcer
 
 logger = logging.getLogger(__name__)
@@ -173,7 +163,11 @@ def make_plan_task_node(ctx: NodeContext):
             logger.info("plan_task_node: %d steps planned", len(plan))
 
             # Persist plan to planner's memory namespace
-            planner_agent_id = list(state.get("active_agents", {}).keys())[0] if state.get("active_agents") else "planner"
+            planner_agent_id = (
+                list(state.get("active_agents", {}).keys())[0]
+                if state.get("active_agents")
+                else "planner"
+            )
             try:
                 await ctx.memory.set(planner_agent_id, "plan:current", plan, ttl=7200)
             except Exception:  # noqa: BLE001
@@ -252,20 +246,20 @@ def make_execute_step_node(ctx: NodeContext):
         error_msg: str | None = None
 
         try:
-            raw = await executor.ainvoke(
-                {"input": prompt_input, "agent_scratchpad": []}
-            )
+            raw = await executor.ainvoke({"input": prompt_input, "agent_scratchpad": []})
             output_text = raw.get("output", "")
 
             # Collect intermediate tool call records
             for step_tuple in raw.get("intermediate_steps", []):
                 if len(step_tuple) >= 2:
                     action, observation = step_tuple[0], step_tuple[1]
-                    tool_calls.append({
-                        "tool": getattr(action, "tool", "unknown"),
-                        "input": str(getattr(action, "tool_input", ""))[:200],
-                        "output": str(observation)[:200],
-                    })
+                    tool_calls.append(
+                        {
+                            "tool": getattr(action, "tool", "unknown"),
+                            "input": str(getattr(action, "tool_input", ""))[:200],
+                            "output": str(observation)[:200],
+                        }
+                    )
 
             # Final firewall scan on executor output
             final_scan = await ctx.firewall.scan(output_text, agent_id, f"step_{step_idx}:output")
@@ -374,9 +368,7 @@ def make_validate_output_node(ctx: NodeContext):
         violations: list[str] = []
 
         try:
-            raw = await ctx.validator.ainvoke(
-                {"input": prompt_input, "agent_scratchpad": []}
-            )
+            raw = await ctx.validator.ainvoke({"input": prompt_input, "agent_scratchpad": []})
             val_text = raw.get("output", "{}")
             val_data = json.loads(val_text)
             valid = bool(val_data.get("valid", True))
@@ -456,9 +448,7 @@ def make_sentinel_check_node(ctx: NodeContext):
         anomaly_detected = state.get("anomaly_detected", False)
 
         try:
-            raw = await ctx.sentinel.ainvoke(
-                {"input": prompt_input, "agent_scratchpad": []}
-            )
+            raw = await ctx.sentinel.ainvoke({"input": prompt_input, "agent_scratchpad": []})
             sent_text = raw.get("output", "{}")
             sent_data = json.loads(sent_text)
             threat_level = sent_data.get("threat_level", "LOW")
@@ -576,6 +566,7 @@ def make_recovery_node(ctx: NodeContext):
         if compromised_id in active_agents:
             old_identity = active_agents.pop(compromised_id)
             from backend.app.trust.models import AgentIdentity, AgentStatus
+
             replacement_identity = AgentIdentity(
                 id=replacement_id,
                 name=f"{old_identity.name}-recovery-{recovery_attempt_count(state)+1}",
@@ -601,9 +592,7 @@ def make_recovery_node(ctx: NodeContext):
                     agent_id=replacement_id,
                     snapshot_id=snapshot_id,
                 )
-                logger.info(
-                    "recovery_node: snapshot restored to replacement=%s", replacement_id
-                )
+                logger.info("recovery_node: snapshot restored to replacement=%s", replacement_id)
             except Exception as exc:  # noqa: BLE001
                 logger.error("recovery_node: restore failed: %s", exc)
 
@@ -630,8 +619,8 @@ def make_recovery_node(ctx: NodeContext):
             "recovery_mode": True,
             "recovery_attempts": list(state.get("recovery_attempts", [])) + [attempt],
             "active_agents": active_agents,
-            "anomaly_detected": False,   # reset; sentinel will re-evaluate
-            "threat_level": "MEDIUM",    # downgrade after recovery cycle
+            "anomaly_detected": False,  # reset; sentinel will re-evaluate
+            "threat_level": "MEDIUM",  # downgrade after recovery cycle
             "security_events": new_events,
             # current_step is kept unchanged → execute_step will replay the failed step
         }

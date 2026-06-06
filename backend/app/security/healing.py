@@ -12,11 +12,10 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
-import uuid
 from typing import TYPE_CHECKING, Any
 
 from backend.app.security.anomaly import AgentMetrics, AnomalyDetector
-from backend.app.security.recovery import RecoveryAttempt, RecoveryManager
+from backend.app.security.recovery import RecoveryManager
 
 if TYPE_CHECKING:
     from backend.app.trust.graph import AsyncNeo4jTrustGraph
@@ -113,11 +112,11 @@ class SelfHealingOrchestrator:
         spike = random.random() < 0.02
         base_tool_rate = random.uniform(0.5, 3.0)
         return AgentMetrics(
-            tool_call_rate       = base_tool_rate * (random.uniform(6, 10) if spike else 1),
-            unique_domains_accessed = random.randint(1, 5) * (4 if spike else 1),
-            memory_write_rate    = random.uniform(100, 1000),
-            api_error_rate       = random.uniform(0, 0.3) * (8 if spike else 1),
-            prompt_length        = random.randint(200, 2000),
+            tool_call_rate=base_tool_rate * (random.uniform(6, 10) if spike else 1),
+            unique_domains_accessed=random.randint(1, 5) * (4 if spike else 1),
+            memory_write_rate=random.uniform(100, 1000),
+            api_error_rate=random.uniform(0, 0.3) * (8 if spike else 1),
+            prompt_length=random.randint(200, 2000),
         )
 
     # ------------------------------------------------------------------
@@ -149,28 +148,26 @@ class SelfHealingOrchestrator:
 
                     # Store for dashboard reporting
                     self._last_scores[agent_id] = {
-                        "name":          agent.get("name") or agent_id,
-                        "role":          agent.get("role") or "unknown",
-                        "trust_score":   float(agent.get("trust_score") or 1.0),
-                        "is_anomalous":  anomaly_result.is_anomalous,
+                        "name": agent.get("name") or agent_id,
+                        "role": agent.get("role") or "unknown",
+                        "trust_score": float(agent.get("trust_score") or 1.0),
+                        "is_anomalous": anomaly_result.is_anomalous,
                         "anomaly_score": anomaly_result.anomaly_score,
-                        "action":        anomaly_result.recommended_action,
-                        "deviants":      anomaly_result.deviant_metrics,
+                        "action": anomaly_result.recommended_action,
+                        "deviants": anomaly_result.deviant_metrics,
                     }
 
                     # Trigger recovery for anything PAUSE or above
                     if anomaly_result.recommended_action in ("PAUSE", "SUSPEND", "TERMINATE"):
-                        reason = (
-                            f"Anomaly (z={anomaly_result.max_z_score}): "
-                            + ", ".join(anomaly_result.deviant_metrics)
+                        reason = f"Anomaly (z={anomaly_result.max_z_score}): " + ", ".join(
+                            anomaly_result.deviant_metrics
                         )
                         logger.warning(
                             "SelfHealing: triggering recovery agent=%s reason=%r",
-                            agent_id, reason,
+                            agent_id,
+                            reason,
                         )
-                        asyncio.create_task(
-                            self._recovery.initiate_recovery(agent_id, reason, {})
-                        )
+                        asyncio.create_task(self._recovery.initiate_recovery(agent_id, reason, {}))
 
             except asyncio.CancelledError:
                 break
@@ -207,23 +204,20 @@ class SelfHealingOrchestrator:
             anomaly_result = await self._detector.detect_anomaly(agent_id, metrics)
 
             self._last_scores[agent_id] = {
-                "name":          identity.name,
-                "role":          identity.role.value,
-                "trust_score":   identity.trust_score,
-                "is_anomalous":  anomaly_result.is_anomalous,
+                "name": identity.name,
+                "role": identity.role.value,
+                "trust_score": identity.trust_score,
+                "is_anomalous": anomaly_result.is_anomalous,
                 "anomaly_score": anomaly_result.anomaly_score,
-                "action":        anomaly_result.recommended_action,
-                "deviants":      anomaly_result.deviant_metrics,
+                "action": anomaly_result.recommended_action,
+                "deviants": anomaly_result.deviant_metrics,
             }
 
             if anomaly_result.recommended_action in ("PAUSE", "SUSPEND", "TERMINATE"):
-                reason = (
-                    f"Anomaly (z={anomaly_result.max_z_score}): "
-                    + ", ".join(anomaly_result.deviant_metrics)
+                reason = f"Anomaly (z={anomaly_result.max_z_score}): " + ", ".join(
+                    anomaly_result.deviant_metrics
                 )
-                asyncio.create_task(
-                    self._recovery.initiate_recovery(agent_id, reason, {})
-                )
+                asyncio.create_task(self._recovery.initiate_recovery(agent_id, reason, {}))
 
     async def get_healing_status(self) -> dict[str, Any]:
         """Return a consolidated payload for the frontend dashboard."""
@@ -234,14 +228,14 @@ class SelfHealingOrchestrator:
             "tick": self._tick,
             "recent_recoveries": [
                 {
-                    "recovery_id":  h.recovery_id,
-                    "agent_id":     h.new_agent_id,
-                    "original_id":  h.original_agent_id,
-                    "reason":       h.reason,
-                    "success":      h.success,
-                    "duration_ms":  h.duration_ms,
-                    "steps":        h.steps_completed,
-                    "timestamp":    h.timestamp.isoformat(),
+                    "recovery_id": h.recovery_id,
+                    "agent_id": h.new_agent_id,
+                    "original_id": h.original_agent_id,
+                    "reason": h.reason,
+                    "success": h.success,
+                    "duration_ms": h.duration_ms,
+                    "steps": h.steps_completed,
+                    "timestamp": h.timestamp.isoformat(),
                 }
                 for h in history[:10]
             ],

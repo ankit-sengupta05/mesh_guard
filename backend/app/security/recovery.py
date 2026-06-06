@@ -12,7 +12,7 @@ import logging
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import redis.asyncio as aioredis
 from pydantic import BaseModel, Field
@@ -97,7 +97,7 @@ class RecoveryManager:
         """
         start_time = time.monotonic()
         new_agent_id = str(uuid.uuid4())
-        
+
         attempt = RecoveryAttempt(
             original_agent_id=agent_id,
             new_agent_id=new_agent_id,
@@ -114,7 +114,7 @@ class RecoveryManager:
 
             # --- STEP 2: SNAPSHOT ---
             logger.info("Recovery Step 2: SNAPSHOT agent=%s", agent_id)
-            pre_snap = await self._snapshots.take_snapshot(
+            await self._snapshots.take_snapshot(
                 agent_id, f"Pre-recovery snapshot (compromised): {reason}"
             )
             attempt.steps_completed.append("SNAPSHOT")
@@ -155,13 +155,13 @@ class RecoveryManager:
             if good_snapshot_id != "none":
                 logger.info(
                     "Recovery Step 5: RESTORE snapshot=%s to agent=%s",
-                    good_snapshot_id, new_agent_id
+                    good_snapshot_id,
+                    new_agent_id,
                 )
                 # Load the *old* agent's clean snapshot into the *new* agent's namespace
                 # Note: MemorySnapshotManager.restore_snapshot assumes the snapshot belongs
                 # to the requested agent_id. We'd normally need a cross-agent restore.
                 # For this prototype, we'll log it as a conceptual success.
-                pass
             else:
                 logger.info("Recovery Step 5: RESTORE skipped (no prior clean snapshot)")
             attempt.steps_completed.append("RESTORE")
@@ -174,14 +174,18 @@ class RecoveryManager:
             attempt.success = True
 
         except Exception as exc:  # noqa: BLE001
-            logger.error("Recovery protocol failed at step %d: %s", len(attempt.steps_completed) + 1, exc)
+            logger.error(
+                "Recovery protocol failed at step %d: %s", len(attempt.steps_completed) + 1, exc
+            )
             attempt.success = False
 
         finally:
             attempt.duration_ms = int((time.monotonic() - start_time) * 1000)
 
             # --- STEP 8: REPORT ---
-            logger.info("Recovery Step 8: REPORT id=%s success=%s", attempt.recovery_id, attempt.success)
+            logger.info(
+                "Recovery Step 8: REPORT id=%s success=%s", attempt.recovery_id, attempt.success
+            )
             await self._emitter.emit_recovery(
                 agent_id=new_agent_id,
                 started=False,
@@ -194,7 +198,7 @@ class RecoveryManager:
                 },
                 source="recovery_manager",
             )
-            
+
             # Save to Redis history
             await self._save_attempt(attempt)
 
@@ -205,7 +209,7 @@ class RecoveryManager:
         raw = await self._redis.get(RECOVERY_HISTORY_KEY)
         history = json.loads(raw) if raw else []
         history.append(json.loads(attempt.model_dump_json()))
-        
+
         # Keep last 100
         history = history[-100:]
         await self._redis.set(RECOVERY_HISTORY_KEY, json.dumps(history))
@@ -215,6 +219,6 @@ class RecoveryManager:
         raw = await self._redis.get(RECOVERY_HISTORY_KEY)
         if not raw:
             return []
-        
+
         history_list = json.loads(raw)
         return [RecoveryAttempt.model_validate(h) for h in reversed(history_list)]

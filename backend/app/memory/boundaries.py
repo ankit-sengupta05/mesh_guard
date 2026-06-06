@@ -13,9 +13,7 @@ Default boundary matrix by agent role:
 
 from __future__ import annotations
 
-import json
 import logging
-from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 import redis.asyncio as aioredis
@@ -163,9 +161,7 @@ class MemoryBoundaryEnforcer:
         """
         return self._boundaries.get(agent_id)
 
-    def build_default_boundary(
-        self, agent_id: str, role: AgentRole
-    ) -> MemoryBoundary:
+    def build_default_boundary(self, agent_id: str, role: AgentRole) -> MemoryBoundary:
         """
         Construct the default MemoryBoundary for a given role.
 
@@ -185,8 +181,7 @@ class MemoryBoundaryEnforcer:
 
         # Expand {agent_id} placeholder in prefix templates
         config["allowed_key_prefixes"] = [
-            prefix.replace("{agent_id}", agent_id)
-            for prefix in config["allowed_key_prefixes"]
+            prefix.replace("{agent_id}", agent_id) for prefix in config["allowed_key_prefixes"]
         ]
 
         return MemoryBoundary(
@@ -246,9 +241,7 @@ class MemoryBoundaryEnforcer:
                 agent_id=agent_id,
                 attempted_key=key,
                 operation=operation,
-                reason=(
-                    f"Key prefix not in allowed list: {boundary.allowed_key_prefixes}."
-                ),
+                reason=(f"Key prefix not in allowed list: {boundary.allowed_key_prefixes}."),
                 allowed_prefixes=boundary.allowed_key_prefixes,
             )
 
@@ -258,9 +251,7 @@ class MemoryBoundaryEnforcer:
                 agent_id=agent_id,
                 attempted_key=key,
                 operation=operation,
-                reason=(
-                    f"Entry limit reached: {current_entry_count}/{boundary.max_entries}."
-                ),
+                reason=(f"Entry limit reached: {current_entry_count}/{boundary.max_entries}."),
                 allowed_prefixes=boundary.allowed_key_prefixes,
             )
 
@@ -338,9 +329,7 @@ class MemoryBoundaryEnforcer:
         Raises:
             MemoryBoundaryViolation: Always.
         """
-        self._violation_counts[agent_id] = (
-            self._violation_counts.get(agent_id, 0) + 1
-        )
+        self._violation_counts[agent_id] = self._violation_counts.get(agent_id, 0) + 1
 
         event = BoundaryViolationEvent(
             agent_id=agent_id,

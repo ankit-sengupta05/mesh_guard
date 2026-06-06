@@ -281,9 +281,7 @@ class MemorySnapshotManager:
 
         # Clear existing memory state
         deleted = await self._mgr.clear_agent_memory(agent_id)
-        logger.info(
-            "Restore: cleared %d existing keys for agent=%s", deleted, agent_id
-        )
+        logger.info("Restore: cleared %d existing keys for agent=%s", deleted, agent_id)
 
         # Replay entries — use original TTL or default if 0
         for entry in snapshot.entries:
@@ -370,9 +368,7 @@ class MemorySnapshotManager:
             reason="auto:pre-operation",
         )
 
-    async def get_snapshot(
-        self, agent_id: str, snapshot_id: str
-    ) -> MemorySnapshot:
+    async def get_snapshot(self, agent_id: str, snapshot_id: str) -> MemorySnapshot:
         """
         Load and fully decompress a single snapshot by ID.
 
@@ -391,9 +387,7 @@ class MemorySnapshotManager:
         raw = await self._mgr.get_raw_snapshot_bytes(snapshot_redis_key)
 
         if raw is None:
-            raise KeyError(
-                f"Snapshot not found: agent={agent_id} snapshot_id={snapshot_id}"
-            )
+            raise KeyError(f"Snapshot not found: agent={agent_id} snapshot_id={snapshot_id}")
 
         data = _unpack(raw)
         entries = [_dict_to_entry(e) for e in data.get("entries", [])]
@@ -437,7 +431,5 @@ class MemorySnapshotManager:
                 ttl=SNAPSHOT_INDEX_TTL_SECONDS,
             )
 
-        logger.info(
-            "Snapshot deleted: agent=%s snapshot_id=%s", agent_id, snapshot_id
-        )
+        logger.info("Snapshot deleted: agent=%s snapshot_id=%s", agent_id, snapshot_id)
         return True

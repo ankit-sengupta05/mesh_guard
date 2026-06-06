@@ -15,7 +15,6 @@ All blocking and threat events are forwarded to SecurityEventEmitter.
 from __future__ import annotations
 
 import logging
-import re
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -31,9 +30,6 @@ from backend.app.security.detectors import (
     SEVERITY_ORDER,
 )
 from backend.app.security.events import (
-    EventSeverity,
-    EventType,
-    SecurityEvent,
     SecurityEventEmitter,
 )
 
@@ -82,9 +78,7 @@ class FirewallResult:
             "sanitized_content": self.sanitized_content,
             "agent_id": self.agent_id,
             "timestamp": self.timestamp.isoformat(),
-            "detectors_triggered": [
-                r.detector for r in self.detector_results if r.triggered
-            ],
+            "detectors_triggered": [r.detector for r in self.detector_results if r.triggered],
         }
 
 
@@ -248,11 +242,7 @@ class PromptInjectionFirewall:
 
         # --- Confidence: average of triggered detectors ---
         triggered = [r for r in results if r.triggered]
-        avg_confidence = (
-            sum(r.confidence for r in triggered) / len(triggered)
-            if triggered
-            else 0.0
-        )
+        avg_confidence = sum(r.confidence for r in triggered) / len(triggered) if triggered else 0.0
 
         threat_type = _dominant_threat_type(results)
         result = await self._make_result(
@@ -307,11 +297,7 @@ class PromptInjectionFirewall:
                 max_sev = _max_severity(max_sev, r.severity)
 
         triggered = [r for r in results if r.triggered]
-        avg_confidence = (
-            sum(r.confidence for r in triggered) / len(triggered)
-            if triggered
-            else 0.0
-        )
+        avg_confidence = sum(r.confidence for r in triggered) / len(triggered) if triggered else 0.0
 
         threat_type = _dominant_threat_type(results)
         return await self._make_result(

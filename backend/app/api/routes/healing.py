@@ -21,6 +21,7 @@ router = APIRouter(prefix="/api/healing", tags=["Self-Healing"])
 # Dependencies
 # ---------------------------------------------------------------------------
 
+
 def get_healing_orchestrator(request: Request) -> SelfHealingOrchestrator:
     return request.app.state.healing_orchestrator
 
@@ -28,6 +29,7 @@ def get_healing_orchestrator(request: Request) -> SelfHealingOrchestrator:
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
+
 
 @router.get("/status")
 async def get_healing_status(
@@ -56,9 +58,8 @@ async def trigger_recovery(
     """
     try:
         import asyncio
-        asyncio.create_task(
-            orchestrator._recovery.initiate_recovery(agent_id, reason, {})
-        )
+
+        asyncio.create_task(orchestrator._recovery.initiate_recovery(agent_id, reason, {}))
         return {"status": "triggered", "agent_id": agent_id, "reason": reason}
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))

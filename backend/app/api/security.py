@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel, Field
 
 from backend.app.api.auth import require_api_key
@@ -62,8 +62,10 @@ _THREAT_EVENTS: List[Dict[str, Any]] = []
 # Models
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class ThreatSeverity(str, Enum):
     """Threat severity classification."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -72,6 +74,7 @@ class ThreatSeverity(str, Enum):
 
 class ScanRequest(BaseModel):
     """Request to scan a prompt for injection attacks."""
+
     prompt: str = Field(..., min_length=1, description="Prompt text to analyze")
     agent_id: Optional[str] = Field(None, description="Source agent ID")
     agent_role: Optional[str] = Field(None, description="Source agent role")
@@ -80,6 +83,7 @@ class ScanRequest(BaseModel):
 
 class ScanResult(BaseModel):
     """Result of a prompt injection scan."""
+
     event_id: str
     blocked: bool
     threat_detected: bool
@@ -94,6 +98,7 @@ class ScanResult(BaseModel):
 
 class ThreatEvent(BaseModel):
     """A recorded security threat event."""
+
     event_id: str
     type: str
     severity: ThreatSeverity
@@ -107,6 +112,7 @@ class ThreatEvent(BaseModel):
 
 class FirewallConfig(BaseModel):
     """Current firewall configuration."""
+
     injection_detection_threshold: float
     semantic_detection_enabled: bool
     pattern_count: int
@@ -116,6 +122,7 @@ class FirewallConfig(BaseModel):
 
 class ThreatStats(BaseModel):
     """Aggregated threat statistics."""
+
     total_events: int
     blocked_count: int
     passed_count: int
@@ -127,6 +134,7 @@ class ThreatStats(BaseModel):
 # ─────────────────────────────────────────────────────────────────────────────
 # Endpoints
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @router.post(
     "/scan",

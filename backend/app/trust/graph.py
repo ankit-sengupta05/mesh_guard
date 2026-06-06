@@ -14,7 +14,6 @@ from datetime import datetime, timezone
 from typing import Any
 
 from neo4j import AsyncGraphDatabase, AsyncDriver, AsyncSession
-from neo4j.exceptions import Neo4jError
 
 from backend.app.trust.models import (
     AgentIdentity,
@@ -33,10 +32,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 # --- Index creation ---
-CQL_CREATE_AGENT_INDEX: str = (
-    "CREATE INDEX agent_id_index IF NOT EXISTS "
-    "FOR (a:Agent) ON (a.id)"
-)
+CQL_CREATE_AGENT_INDEX: str = "CREATE INDEX agent_id_index IF NOT EXISTS " "FOR (a:Agent) ON (a.id)"
 
 CQL_CREATE_PERMISSION_INDEX: str = (
     "CREATE INDEX permission_agent_resource_index IF NOT EXISTS "
@@ -261,6 +257,7 @@ class AsyncNeo4jTrustGraph:
         metadata_raw = props.get("metadata", "{}")
         if isinstance(metadata_raw, str):
             import json
+
             metadata = json.loads(metadata_raw)
         else:
             metadata = metadata_raw or {}
@@ -434,9 +431,7 @@ class AsyncNeo4jTrustGraph:
             record = await result.single()
 
         if record is None:
-            raise RuntimeError(
-                f"Failed to record interaction {from_id!r}→{to_id!r}."
-            )
+            raise RuntimeError(f"Failed to record interaction {from_id!r}→{to_id!r}.")
 
         rel = dict(record["r"])
         edge = TrustEdge(
@@ -444,9 +439,11 @@ class AsyncNeo4jTrustGraph:
             to_agent_id=to_id,
             interaction_count=int(rel["interaction_count"]),
             anomaly_count=int(rel["anomaly_count"]),
-            last_interaction=datetime.fromisoformat(rel["last_interaction"])
-            if isinstance(rel.get("last_interaction"), str)
-            else datetime.now(timezone.utc),
+            last_interaction=(
+                datetime.fromisoformat(rel["last_interaction"])
+                if isinstance(rel.get("last_interaction"), str)
+                else datetime.now(timezone.utc)
+            ),
             trust_weight=float(rel.get("trust_weight", 1.0)),
         )
         logger.debug(
@@ -589,9 +586,7 @@ class AsyncNeo4jTrustGraph:
             raise KeyError(f"Agent not found: {agent_id!r}")
 
         agent = self._node_to_agent(dict(record["a"]))
-        logger.warning(
-            "Agent suspended: id=%s reason=%r", agent_id, reason
-        )
+        logger.warning("Agent suspended: id=%s reason=%r", agent_id, reason)
         return agent
 
     async def get_full_graph(self) -> TrustGraphSnapshot:
@@ -611,9 +606,7 @@ class AsyncNeo4jTrustGraph:
             edges_result = await session.run(CQL_GET_ALL_EDGES)
             edge_records = await edges_result.data()
 
-        nodes: list[AgentIdentity] = [
-            self._node_to_agent(dict(r["a"])) for r in agent_records
-        ]
+        nodes: list[AgentIdentity] = [self._node_to_agent(dict(r["a"])) for r in agent_records]
 
         edges: list[TrustEdge] = []
         for r in edge_records:
@@ -635,9 +628,7 @@ class AsyncNeo4jTrustGraph:
             )
 
         snapshot = TrustGraphSnapshot(nodes=nodes, edges=edges)
-        logger.debug(
-            "Graph snapshot: %d nodes, %d edges", len(nodes), len(edges)
-        )
+        logger.debug("Graph snapshot: %d nodes, %d edges", len(nodes), len(edges))
         return snapshot
 
     async def decay_inactive_scores(self) -> int:

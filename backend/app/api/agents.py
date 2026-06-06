@@ -29,8 +29,10 @@ router = APIRouter(dependencies=[Depends(require_api_key)])
 # Enums + Models
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class AgentRole(str, Enum):
     """Defines the capability set granted to an agent in the trust graph."""
+
     PLANNER = "planner"
     WEB = "web"
     CODE = "code"
@@ -41,6 +43,7 @@ class AgentRole(str, Enum):
 
 class AgentStatus(str, Enum):
     """Current lifecycle state of an agent."""
+
     IDLE = "idle"
     RUNNING = "running"
     PAUSED = "paused"
@@ -51,14 +54,20 @@ class AgentStatus(str, Enum):
 
 class AgentRegisterRequest(BaseModel):
     """Request body for registering a new agent."""
+
     name: str = Field(..., min_length=1, max_length=64, description="Unique agent name")
     role: AgentRole = Field(..., description="Agent role determines trust permissions")
-    description: Optional[str] = Field(None, max_length=256, description="Human-readable description")
-    metadata: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Arbitrary agent metadata")
+    description: Optional[str] = Field(
+        None, max_length=256, description="Human-readable description"
+    )
+    metadata: Optional[Dict[str, Any]] = Field(
+        default_factory=dict, description="Arbitrary agent metadata"
+    )
 
 
 class AgentResponse(BaseModel):
     """Agent data returned from API endpoints."""
+
     agent_id: str
     name: str
     role: AgentRole
@@ -72,6 +81,7 @@ class AgentResponse(BaseModel):
 
 class AgentControlRequest(BaseModel):
     """Request body for agent control actions."""
+
     action: str = Field(..., description="Action: pause | resume | terminate | quarantine")
     reason: Optional[str] = Field(None, description="Human-readable reason for the action")
 
@@ -86,6 +96,7 @@ _AGENT_REGISTRY: Dict[str, Dict[str, Any]] = {}
 # ─────────────────────────────────────────────────────────────────────────────
 # Endpoints
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @router.post(
     "/register",
@@ -108,6 +119,7 @@ async def register_agent(
     Returns the new agent's full record including assigned agent_id.
     """
     from app.config import get_settings
+
     settings = get_settings()
 
     # Check for name collision
@@ -143,7 +155,9 @@ async def register_agent(
     if redis:
         await redis.hset(
             f"agent:{agent_id}:meta",
-            mapping={k: json.dumps(v) if isinstance(v, dict) else str(v) for k, v in agent_data.items()},
+            mapping={
+                k: json.dumps(v) if isinstance(v, dict) else str(v) for k, v in agent_data.items()
+            },
         )
         await redis.expire(f"agent:{agent_id}:meta", settings.redis_default_ttl)
         await redis.sadd("agents:active", agent_id)

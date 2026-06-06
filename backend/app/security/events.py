@@ -18,7 +18,6 @@ Environment variables:
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import os
 import uuid
@@ -252,9 +251,7 @@ class SecurityEventEmitter:
         try:
             await self._redis.publish(SECURITY_EVENTS_CHANNEL, payload_json)
         except Exception as exc:  # noqa: BLE001
-            logger.error(
-                "SecurityEventEmitter: Redis publish failed: %s", exc, exc_info=True
-            )
+            logger.error("SecurityEventEmitter: Redis publish failed: %s", exc, exc_info=True)
 
     async def _store_history(self, event: SecurityEvent, payload_json: str) -> None:
         """Append event to the sorted-set history; prune if over SECURITY_EVENTS_MAX."""
@@ -268,13 +265,9 @@ class SecurityEventEmitter:
             pipe.zremrangebyrank(SECURITY_EVENTS_KEY, 0, -(SECURITY_EVENTS_MAX + 1))
             await pipe.execute()
         except Exception as exc:  # noqa: BLE001
-            logger.error(
-                "SecurityEventEmitter: history store failed: %s", exc, exc_info=True
-            )
+            logger.error("SecurityEventEmitter: history store failed: %s", exc, exc_info=True)
 
-    async def _broadcast_websockets(
-        self, event: SecurityEvent, payload_json: str
-    ) -> None:
+    async def _broadcast_websockets(self, event: SecurityEvent, payload_json: str) -> None:
         """Fan-out event JSON to all registered WebSocket send callbacks."""
         if not self._ws_subscribers:
             return
@@ -334,9 +327,7 @@ class SecurityEventEmitter:
                 withscores=False,
             )
         except Exception as exc:  # noqa: BLE001
-            logger.error(
-                "SecurityEventEmitter: history read failed: %s", exc, exc_info=True
-            )
+            logger.error("SecurityEventEmitter: history read failed: %s", exc, exc_info=True)
             return []
 
         events: list[SecurityEvent] = []

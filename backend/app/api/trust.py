@@ -27,8 +27,10 @@ router = APIRouter(dependencies=[Depends(require_api_key)])
 # Models
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TrustScoreResponse(BaseModel):
     """Current trust state for an agent."""
+
     agent_id: str
     name: str
     trust_score: float
@@ -40,6 +42,7 @@ class TrustScoreResponse(BaseModel):
 
 class TrustUpdateRequest(BaseModel):
     """Manual trust score adjustment."""
+
     delta: float = Field(..., description="Score change (+/-). Applied to current score.")
     reason: str = Field(..., min_length=1, description="Human-readable justification")
     operator: Optional[str] = Field(None, description="Who made the change")
@@ -47,6 +50,7 @@ class TrustUpdateRequest(BaseModel):
 
 class AuthorizeRequest(BaseModel):
     """Request to authorize one agent calling another."""
+
     caller_id: str = Field(..., description="Agent making the call")
     target_id: str = Field(..., description="Agent being called")
     action: str = Field(..., description="Action being requested (e.g. 'read_memory')")
@@ -54,6 +58,7 @@ class AuthorizeRequest(BaseModel):
 
 class AuthorizeResponse(BaseModel):
     """Authorization decision."""
+
     authorized: bool
     reason: str
     caller_trust_score: float
@@ -63,6 +68,7 @@ class AuthorizeResponse(BaseModel):
 
 class TrustTopologyResponse(BaseModel):
     """Full trust graph topology for visualization."""
+
     nodes: List[Dict[str, Any]]
     edges: List[Dict[str, Any]]
     total_agents: int
@@ -74,6 +80,7 @@ class TrustTopologyResponse(BaseModel):
 # ─────────────────────────────────────────────────────────────────────────────
 # Endpoints
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @router.get(
     "/{agent_id}/score",
@@ -223,7 +230,7 @@ async def authorize_call(
     now = datetime.now(timezone.utc).isoformat()
 
     caller = _AGENT_REGISTRY.get(body.caller_id)
-    target = _AGENT_REGISTRY.get(body.target_id)
+    _AGENT_REGISTRY.get(body.target_id)
 
     if not caller:
         return AuthorizeResponse(
@@ -320,13 +327,15 @@ async def get_topology(request: Request) -> TrustTopologyResponse:
     executor_nodes = [n for n in nodes if n["role"] != "planner"]
     for planner in planner_nodes:
         for executor in executor_nodes:
-            edges.append({
-                "id": str(uuid.uuid4()),
-                "source": planner["id"],
-                "target": executor["id"],
-                "type": "DELEGATES_TO",
-                "trust_weight": min(planner["trust_score"], executor["trust_score"]) / 100.0,
-            })
+            edges.append(
+                {
+                    "id": str(uuid.uuid4()),
+                    "source": planner["id"],
+                    "target": executor["id"],
+                    "type": "DELEGATES_TO",
+                    "trust_weight": min(planner["trust_score"], executor["trust_score"]) / 100.0,
+                }
+            )
 
     scores = [n["trust_score"] for n in nodes] or [0.0]
     quarantined = sum(1 for n in nodes if n["quarantined"])

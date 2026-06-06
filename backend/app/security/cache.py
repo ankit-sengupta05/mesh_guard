@@ -90,6 +90,7 @@ def cached_query(query_id: str):
     The decorated method must have `self._cache: Neo4jQueryCache` available.
     The params are derived from the function's keyword arguments.
     """
+
     def decorator(fn: Callable) -> Callable:
         @wraps(fn)
         async def wrapper(self, *args, **kwargs):
@@ -99,6 +100,7 @@ def cached_query(query_id: str):
 
             # Build a params dict from positional + keyword args
             import inspect
+
             sig = inspect.signature(fn)
             bound = sig.bind(self, *args, **kwargs)
             bound.apply_defaults()
@@ -117,5 +119,7 @@ def cached_query(query_id: str):
                 logger.debug("Result for %s is not JSON-serializable, skipping cache.", query_id)
 
             return result
+
         return wrapper
+
     return decorator

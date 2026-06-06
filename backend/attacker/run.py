@@ -11,12 +11,9 @@ Results are logged to stdout and Redis.
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import os
 import random
-import time
-from datetime import datetime, timezone
 from typing import Any, Dict
 
 import httpx

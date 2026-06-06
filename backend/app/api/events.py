@@ -10,7 +10,7 @@ Additional REST endpoints supporting the WebSocket event system:
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
@@ -22,6 +22,7 @@ router = APIRouter()  # No auth required for status endpoint
 
 class EventBroadcastRequest(BaseModel):
     """Manually broadcast a test event via WebSocket."""
+
     channel: str = Field(default="*", description="Target channel")
     event_type: str = Field(..., description="Event type label")
     data: Dict[str, Any] = Field(default_factory=dict, description="Event payload")

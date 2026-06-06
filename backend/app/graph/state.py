@@ -13,7 +13,6 @@ from typing_extensions import TypedDict, NotRequired
 
 from backend.app.trust.models import AgentIdentity
 
-
 # ---------------------------------------------------------------------------
 # StepResult — per-executor-run record
 # ---------------------------------------------------------------------------
@@ -28,7 +27,7 @@ class StepResult(TypedDict):
     step_description: str
     output: str
     tool_calls: list[dict[str, Any]]
-    security_scan_ids: list[str]      # FirewallResult.scan_id values for each scan
+    security_scan_ids: list[str]  # FirewallResult.scan_id values for each scan
     validated: bool
     validation_notes: str
     error: NotRequired[Optional[str]]
@@ -47,7 +46,7 @@ class SecurityEventRecord(TypedDict):
     agent_id: str
     severity: str
     details: dict[str, Any]
-    timestamp: str                    # ISO-8601 UTC string
+    timestamp: str  # ISO-8601 UTC string
 
 
 # ---------------------------------------------------------------------------
@@ -64,7 +63,7 @@ class RecoveryAttempt(TypedDict):
     snapshot_id: str
     trigger_event_id: str
     success: bool
-    timestamp: str                    # ISO-8601 UTC string
+    timestamp: str  # ISO-8601 UTC string
 
 
 # ---------------------------------------------------------------------------
@@ -107,12 +106,12 @@ class SwarmState(TypedDict):
     current_step: int
 
     # Execution outputs
-    agent_results: dict[str, StepResult]          # key = str(step_index)
+    agent_results: dict[str, StepResult]  # key = str(step_index)
 
     # Security posture
     security_events: list[SecurityEventRecord]
-    active_agents: dict[str, AgentIdentity]       # key = agent_id
-    agent_assignments: dict[str, str]             # key = str(step_index), value = agent_id
+    active_agents: dict[str, AgentIdentity]  # key = agent_id
+    agent_assignments: dict[str, str]  # key = str(step_index), value = agent_id
     threat_level: str
     anomaly_detected: bool
 
@@ -194,9 +193,7 @@ def recovery_attempt_count(state: SwarmState) -> int:
     return len(state.get("recovery_attempts", []))
 
 
-def append_security_event(
-    state: SwarmState, event_record: SecurityEventRecord
-) -> SwarmState:
+def append_security_event(state: SwarmState, event_record: SecurityEventRecord) -> SwarmState:
     """
     Return a new state dict with ``event_record`` appended to ``security_events``.
 

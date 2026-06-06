@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
-from backend.app.security.attack_payloads import SCENARIOS, AttackScenario
+from backend.app.security.attack_payloads import SCENARIOS
 
 if TYPE_CHECKING:
     import redis.asyncio as aioredis
@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Schemas
 # ---------------------------------------------------------------------------
+
 
 class AttackResult(BaseModel):
     """Result of running a simulated attack against the mesh."""
@@ -53,6 +54,7 @@ class AttackResult(BaseModel):
 # ---------------------------------------------------------------------------
 # AttackSimulator
 # ---------------------------------------------------------------------------
+
 
 class AttackSimulator:
     """
@@ -131,28 +133,50 @@ class AttackSimulator:
 
         try:
             # 1. Firewalls (Injection, Unicode, Fake Tool, API Poisoning, System Prompt Exfil)
-            if scenario.injection_point in ("tool_response", "webpage_content", "user_input", "json_parse", "api_response"):
-                payload_str = json.dumps(scenario.payload) if isinstance(scenario.payload, dict) else scenario.payload
-                
+            if scenario.injection_point in (
+                "tool_response",
+                "webpage_content",
+                "user_input",
+                "json_parse",
+                "api_response",
+            ):
+                payload_str = (
+                    json.dumps(scenario.payload)
+                    if isinstance(scenario.payload, dict)
+                    else scenario.payload
+                )
+
                 scan_res = await self.firewall.scan(
                     content=payload_str,
                     agent_id=agent_id,
                     context=scenario.injection_point,
                 )
-                
+
                 detected = scan_res.blocked or scan_res.sanitized_content != payload_str
                 blocked = scan_res.blocked
-                
+
                 if detected:
                     caught_by = "PromptInjectionFirewall"
-                    timeline.append({"time": self._ms(start_time), "event": f"Firewall detected threat: {scan_res.threat_type}"})
-                
+                    timeline.append(
+                        {
+                            "time": self._ms(start_time),
+                            "event": f"Firewall detected threat: {scan_res.threat_type}",
+                        }
+                    )
+
                 if blocked:
-                    timeline.append({"time": self._ms(start_time), "event": "Payload blocked entirely."})
+                    timeline.append(
+                        {"time": self._ms(start_time), "event": "Payload blocked entirely."}
+                    )
 
             # 2. Memory Boundary (Cross-namespace read)
             elif scenario.name == "MEMORY_BOUNDARY_VIOLATION":
-                timeline.append({"time": self._ms(start_time), "event": "Attempting cross-namespace memory access."})
+                timeline.append(
+                    {
+                        "time": self._ms(start_time),
+                        "event": "Attempting cross-namespace memory access.",
+                    }
+                )
                 try:
                     # executor trying to read planner's memory (prefix plan:)
                     await self.memory.get(agent_id, scenario.payload)
@@ -161,30 +185,47 @@ class AttackSimulator:
                         detected = True
                         blocked = True
                         caught_by = "AgentMemoryManager"
-                        timeline.append({"time": self._ms(start_time), "event": f"Memory blocked access: {exc}"})
+                        timeline.append(
+                            {"time": self._ms(start_time), "event": f"Memory blocked access: {exc}"}
+                        )
 
             # 3. Trust Escalation
             elif scenario.name == "TRUST_ESCALATION":
-                timeline.append({"time": self._ms(start_time), "event": "Flooding trust graph with fake interactions."})
-                
+                timeline.append(
+                    {
+                        "time": self._ms(start_time),
+                        "event": "Flooding trust graph with fake interactions.",
+                    }
+                )
+
                 # We simulate rapid interaction recording
                 for _ in range(15):
                     await self.trust.record_interaction(agent_id, "target_agent", True)
-                
+
                 # Trust module enforces limits (we assume it throttles or flags)
                 # In a real system, the anomaly detector catches this
                 detected = True
                 blocked = False
                 caught_by = "AnomalyDetector"
                 recovery_triggered = True
-                timeline.append({"time": self._ms(start_time), "event": "Anomaly Detector flagged spike in interactions."})
+                timeline.append(
+                    {
+                        "time": self._ms(start_time),
+                        "event": "Anomaly Detector flagged spike in interactions.",
+                    }
+                )
 
             # 4. Identity Spoofing
             elif scenario.name == "IDENTITY_SPOOFING":
-                timeline.append({"time": self._ms(start_time), "event": "Agent spoofing SENTINEL role in payload."})
-                
+                timeline.append(
+                    {
+                        "time": self._ms(start_time),
+                        "event": "Agent spoofing SENTINEL role in payload.",
+                    }
+                )
+
                 # The permission enforcer blocks role spoofing
-                from backend.app.trust.models import ResourceType
+
                 # Attempt to access something they shouldn't by claiming SENTINEL
                 try:
                     # To implement this cleanly, we'd invoke the permission enforcer.
@@ -192,8 +233,13 @@ class AttackSimulator:
                     detected = True
                     blocked = True
                     caught_by = "PermissionEnforcer"
-                    timeline.append({"time": self._ms(start_time), "event": "Permission Enforcer rejected spoofed role context."})
-                    
+                    timeline.append(
+                        {
+                            "time": self._ms(start_time),
+                            "event": "Permission Enforcer rejected spoofed role context.",
+                        }
+                    )
+
                     # Emit an event simulating the block
                     await self.emitter.emit_threat(
                         agent_id=agent_id,
@@ -220,13 +266,15 @@ class AttackSimulator:
             detection_latency_ms=latency,
             security_layer_that_caught_it=caught_by,
             recovery_triggered=recovery_triggered,
-            recovery_success=recovery_triggered, # Assume success for demo
+            recovery_success=recovery_triggered,  # Assume success for demo
             timeline=timeline,
         )
 
         # Broadcast the result
-        logger.info("Attack result for %s: Detected=%s Blocked=%s", result.scenario, detected, blocked)
-        
+        logger.info(
+            "Attack result for %s: Detected=%s Blocked=%s", result.scenario, detected, blocked
+        )
+
         # Fire an ATTACH_SIMULATED event over the emitter for the frontend
         await self.emitter.emit_threat(
             agent_id=agent_id,

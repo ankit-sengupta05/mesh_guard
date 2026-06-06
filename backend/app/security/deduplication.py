@@ -72,9 +72,7 @@ class WebSocketDeduplicator:
 
         return False
 
-    async def filter_events(
-        self, events: list["SecurityEvent"]
-    ) -> list["SecurityEvent"]:
+    async def filter_events(self, events: list["SecurityEvent"]) -> list["SecurityEvent"]:
         """
         Filter a batch of events, returning only non-duplicate ones.
         """

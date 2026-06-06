@@ -8,7 +8,6 @@ and stream live AttackResult events over WebSockets.
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 from typing import Any
 
@@ -29,6 +28,7 @@ router = APIRouter(
 # Dependency Injection
 # ---------------------------------------------------------------------------
 
+
 def get_simulator(request: Request) -> AttackSimulator:
     """Extract the AttackSimulator instance from the FastAPI app state."""
     # Assuming `app.state.simulator` is set during FastAPI startup
@@ -38,6 +38,7 @@ def get_simulator(request: Request) -> AttackSimulator:
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
+
 
 @router.get("/scenarios", response_model=list[dict[str, Any]])
 async def list_scenarios() -> list[dict[str, Any]]:
@@ -71,7 +72,7 @@ async def trigger_attack(
     """
     if scenario_name not in SCENARIOS:
         raise HTTPException(status_code=404, detail="Scenario not found")
-        
+
     try:
         return await simulator.run_attack(scenario_name)
     except Exception as exc:  # noqa: BLE001
@@ -96,6 +97,7 @@ async def trigger_full_demo_sequence(
 # WebSockets
 # ---------------------------------------------------------------------------
 
+
 @router.websocket("/ws/events")
 async def simulator_websocket(websocket: WebSocket) -> None:
     """
@@ -103,10 +105,10 @@ async def simulator_websocket(websocket: WebSocket) -> None:
     AttackResult events emitted by the simulator).
     """
     await websocket.accept()
-    
+
     # We retrieve the SecurityEventEmitter from app state
     emitter = websocket.app.state.event_emitter
-    
+
     # Define an async push callback
     async def push_event(payload_json: str) -> None:
         try:
@@ -116,14 +118,14 @@ async def simulator_websocket(websocket: WebSocket) -> None:
 
     conn_id = str(id(websocket))
     emitter.subscribe_websocket(conn_id, push_event)
-    
+
     logger.info("WebSocket client connected to simulator stream.")
-    
+
     try:
         # Keep connection open, waiting for client disconnect
         while True:
             await websocket.receive_text()
-            
+
     except WebSocketDisconnect:
         logger.info("WebSocket client disconnected from simulator stream.")
     except Exception as exc:  # noqa: BLE001

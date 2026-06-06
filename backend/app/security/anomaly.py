@@ -18,7 +18,6 @@ Thresholds:
 
 from __future__ import annotations
 
-import json
 import logging
 import math
 from datetime import datetime, timezone
@@ -159,9 +158,7 @@ class AnomalyDetector:
         await self._save_baseline(baseline)
         logger.debug("Anomaly baseline updated for agent=%s", agent_id)
 
-    async def detect_anomaly(
-        self, agent_id: str, current_metrics: AgentMetrics
-    ) -> AnomalyResult:
+    async def detect_anomaly(self, agent_id: str, current_metrics: AgentMetrics) -> AnomalyResult:
         """
         Evaluate current metrics against the baseline to detect anomalies.
 
@@ -228,7 +225,10 @@ class AnomalyDetector:
         if is_anomalous:
             logger.warning(
                 "Anomaly detected for agent=%s max_z=%.2f action=%s deviants=%s",
-                agent_id, max_z, action, deviant_metrics
+                agent_id,
+                max_z,
+                action,
+                deviant_metrics,
             )
 
         return result

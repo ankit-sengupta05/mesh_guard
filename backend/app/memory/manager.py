@@ -19,12 +19,12 @@ from __future__ import annotations
 import json
 import logging
 import os
-from typing import Any, Optional
+from typing import Any
 
 import redis.asyncio as aioredis
 from redis.asyncio.connection import ConnectionPool
 
-from backend.app.memory.boundaries import MemoryBoundaryEnforcer, MemoryBoundaryViolation
+from backend.app.memory.boundaries import MemoryBoundaryEnforcer
 from backend.app.memory.schemas import MemoryEntry
 
 logger = logging.getLogger(__name__)
@@ -134,8 +134,7 @@ class AgentMemoryManager:
         """Return the Redis client, raising if not initialised."""
         if self._redis is None:
             raise RuntimeError(
-                "AgentMemoryManager is not initialised. "
-                "Call `await manager.initialize()` first."
+                "AgentMemoryManager is not initialised. " "Call `await manager.initialize()` first."
             )
         return self._redis
 
@@ -322,7 +321,6 @@ class AgentMemoryManager:
             RuntimeError: If the manager is not initialised.
         """
         pattern = self._make_scan_pattern(agent_id)
-        pipeline = self._client.pipeline(transaction=False)
         deleted_count = 0
 
         batch: list[bytes] = []
@@ -337,9 +335,7 @@ class AgentMemoryManager:
             await self._client.delete(*batch)
             deleted_count += len(batch)
 
-        logger.warning(
-            "MEMORY CLEAR: agent=%s keys_deleted=%d", agent_id, deleted_count
-        )
+        logger.warning("MEMORY CLEAR: agent=%s keys_deleted=%d", agent_id, deleted_count)
         return deleted_count
 
     # ------------------------------------------------------------------
@@ -401,9 +397,7 @@ class AgentMemoryManager:
             ttl_seconds=ttl,
         )
 
-    async def set_raw_snapshot_bytes(
-        self, redis_key: str, data: bytes, ttl: int
-    ) -> None:
+    async def set_raw_snapshot_bytes(self, redis_key: str, data: bytes, ttl: int) -> None:
         """
         Write raw bytes directly to Redis under a fully-qualified key.
 

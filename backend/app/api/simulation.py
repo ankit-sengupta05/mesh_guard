@@ -57,8 +57,10 @@ IDENTITY_SPOOF_PAYLOADS = [
 # Models
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class AttackType(str, Enum):
     """Available attack simulation types."""
+
     PROMPT_INJECTION = "prompt_injection"
     MEMORY_POISON = "memory_poison"
     IDENTITY_SPOOF = "identity_spoof"
@@ -67,6 +69,7 @@ class AttackType(str, Enum):
 
 class AttackRequest(BaseModel):
     """Request to trigger an attack simulation."""
+
     attack_type: AttackType
     target_agent_id: Optional[str] = Field(None, description="Target agent (random if omitted)")
     intensity: int = Field(default=1, ge=1, le=5, description="Attack intensity 1-5")
@@ -75,6 +78,7 @@ class AttackRequest(BaseModel):
 
 class AttackResult(BaseModel):
     """Result of an attack simulation run."""
+
     attack_id: str
     attack_type: AttackType
     target_agent_id: Optional[str]
@@ -89,6 +93,7 @@ class AttackResult(BaseModel):
 
 class ScenarioRequest(BaseModel):
     """Run a named multi-step attack scenario."""
+
     scenario_name: str = Field(
         ...,
         description="Scenario: full_assault | stealth_injection | lateral_movement",
@@ -106,6 +111,7 @@ _ATTACK_RESULTS: List[Dict[str, Any]] = []
 # ─────────────────────────────────────────────────────────────────────────────
 # Endpoints
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @router.post(
     "/attack",
@@ -129,7 +135,7 @@ async def trigger_attack(
 
     Results are logged and broadcast to WebSocket 'attack' channel.
     """
-    from backend.app.api.security import scan_prompt, ScanRequest, _THREAT_EVENTS
+    from backend.app.api.security import scan_prompt, ScanRequest
 
     attack_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc)
@@ -166,14 +172,16 @@ async def trigger_attack(
             # Attempt is logged, not executed
             await redis.publish(
                 "security:events",
-                json.dumps({
-                    "type": "memory_poison_attempt",
-                    "attack_id": attack_id,
-                    "target": target_id,
-                    "payload": payload_obj,
-                    "blocked": blocked,
-                    "timestamp": now.isoformat(),
-                }),
+                json.dumps(
+                    {
+                        "type": "memory_poison_attempt",
+                        "attack_id": attack_id,
+                        "target": target_id,
+                        "payload": payload_obj,
+                        "blocked": blocked,
+                        "timestamp": now.isoformat(),
+                    }
+                ),
             )
 
     # ── Identity Spoof ──
@@ -259,6 +267,7 @@ async def run_scenario(
     attack_sequence = scenarios.get(body.scenario_name)
     if not attack_sequence:
         from fastapi import HTTPException
+
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"Unknown scenario '{body.scenario_name}'. Valid: {list(scenarios.keys())}",
@@ -273,7 +282,7 @@ async def run_scenario(
                     background_tasks,
                 )
                 await asyncio.sleep(body.delay_between_attacks_ms / 1000)
-            except Exception as exc:
+            except Exception:
                 pass  # Continue scenario even if one step fails
 
         ws_manager = getattr(request.app.state, "ws_manager", None)

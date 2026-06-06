@@ -20,15 +20,19 @@ router = APIRouter(prefix="/api/agents", tags=["Agents"])
 # Dependencies
 # ---------------------------------------------------------------------------
 
+
 def get_trust_graph(request: Request) -> AsyncNeo4jTrustGraph:
     return request.app.state.trust_graph
+
 
 def get_snapshot_manager(request: Request) -> MemorySnapshotManager:
     return request.app.state.snapshot_manager
 
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
+
 
 @router.get("")
 async def list_agents(
@@ -47,6 +51,7 @@ async def list_agents(
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
+
 @router.get("/{agent_id}")
 async def get_agent_detail(
     agent_id: str,
@@ -57,7 +62,7 @@ async def get_agent_detail(
     try:
         agent = await trust_graph.get_agent(agent_id)
         snaps = await snapshots.list_snapshots(agent_id)
-        
+
         return {
             "identity": agent.model_dump(),
             "snapshots": [s.model_dump() for s in snaps],
@@ -66,6 +71,7 @@ async def get_agent_detail(
         raise HTTPException(status_code=404, detail=str(exc))
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
 
 @router.get("/{agent_id}/permissions")
 async def get_agent_permissions(
@@ -81,11 +87,12 @@ async def get_agent_permissions(
         records = await enforcer.trust_graph._execute_read(
             "MATCH (a:Agent {id: $agent_id})-[:HAS_PERMISSION]->(r:Resource) "
             "RETURN r.type AS type",
-            {"agent_id": agent_id}
+            {"agent_id": agent_id},
         )
         return [r["type"] for r in records]
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
 
 @router.post("/{agent_id}/suspend")
 async def suspend_agent(
@@ -100,6 +107,7 @@ async def suspend_agent(
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
+
 @router.post("/{agent_id}/restore")
 async def restore_agent(
     agent_id: str,
@@ -113,9 +121,11 @@ async def restore_agent(
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
+
 # ---------------------------------------------------------------------------
 # Global Graph Visualization Route
 # ---------------------------------------------------------------------------
+
 
 @router.get("/trust-graph/viz")
 async def get_trust_graph_viz(
@@ -131,7 +141,7 @@ async def get_trust_graph_viz(
             "MATCH (a:Agent) RETURN a.id AS id, a.name AS name, a.role AS role, "
             "a.trust_score AS trust_score, a.status AS status"
         )
-        
+
         # Get all edges
         edge_records = await trust_graph._execute_read(
             "MATCH (src:Agent)-[r:INTERACTS_WITH]->(dst:Agent) "
@@ -143,24 +153,28 @@ async def get_trust_graph_viz(
         nodes = []
         for r in agent_records:
             if r.get("id"):
-                nodes.append({
-                    "id": r["id"],
-                    "name": r.get("name") or r["id"],
-                    "role": r.get("role") or "executor",
-                    "trust_score": float(r.get("trust_score") or 1.0),
-                    "status": r.get("status") or "ACTIVE",
-                })
+                nodes.append(
+                    {
+                        "id": r["id"],
+                        "name": r.get("name") or r["id"],
+                        "role": r.get("role") or "executor",
+                        "trust_score": float(r.get("trust_score") or 1.0),
+                        "status": r.get("status") or "ACTIVE",
+                    }
+                )
 
         edges = []
         for r in edge_records:
             if r.get("source") and r.get("target"):
-                edges.append({
-                    "source": r["source"],
-                    "target": r["target"],
-                    "type": r.get("type") or "INTERACTS_WITH",
-                    "interaction_count": int(r.get("interaction_count") or 1),
-                    "trust_weight": float(r.get("trust_weight") or 1.0),
-                })
+                edges.append(
+                    {
+                        "source": r["source"],
+                        "target": r["target"],
+                        "type": r.get("type") or "INTERACTS_WITH",
+                        "interaction_count": int(r.get("interaction_count") or 1),
+                        "trust_weight": float(r.get("trust_weight") or 1.0),
+                    }
+                )
 
         return {"nodes": nodes, "edges": edges}
     except Exception as exc:

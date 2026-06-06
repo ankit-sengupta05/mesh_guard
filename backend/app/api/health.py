@@ -82,9 +82,7 @@ async def ready(request: Request) -> Dict[str, Any]:
 
     startup_time = getattr(state, "startup_time", None)
     uptime_seconds = (
-        (datetime.now(timezone.utc) - startup_time).total_seconds()
-        if startup_time
-        else 0
+        (datetime.now(timezone.utc) - startup_time).total_seconds() if startup_time else 0
     )
 
     response = {

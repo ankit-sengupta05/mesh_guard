@@ -7,7 +7,6 @@ updates to the frontend React dashboard.
 
 from __future__ import annotations
 
-import json
 import logging
 from typing import TYPE_CHECKING
 
@@ -17,6 +16,7 @@ if TYPE_CHECKING:
     from backend.app.security.events import SecurityEvent
 
 logger = logging.getLogger(__name__)
+
 
 class WebSocketManager:
     """
@@ -54,17 +54,17 @@ class WebSocketManager:
         """
         if not self.active_connections:
             return
-            
+
         payload = event.model_dump_json()
         dead_clients = []
-        
+
         for client_id, ws in self.active_connections.items():
             try:
                 await ws.send_text(payload)
             except Exception as exc:  # noqa: BLE001
                 logger.error("Broadcast failed for %s: %s", client_id, exc)
                 dead_clients.append(client_id)
-                
+
         for dead_id in dead_clients:
             self.disconnect(dead_id)
 
@@ -75,18 +75,19 @@ class WebSocketManager:
         """
         if not self.active_connections:
             return
-            
+
         dead_clients = []
-        
+
         for client_id, ws in self.active_connections.items():
             try:
                 await ws.send_text(payload_json)
             except Exception as exc:  # noqa: BLE001
                 logger.error("Raw broadcast failed for %s: %s", client_id, exc)
                 dead_clients.append(client_id)
-                
+
         for dead_id in dead_clients:
             self.disconnect(dead_id)
+
 
 # Global singleton
 manager = WebSocketManager()

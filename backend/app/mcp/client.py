@@ -27,21 +27,25 @@ logger = logging.getLogger(__name__)
 # Models
 # ---------------------------------------------------------------------------
 
+
 class ToolResult(BaseModel):
     success: bool
     result: Any
     latency_ms: int
     error: str | None = None
 
+
 # ---------------------------------------------------------------------------
 # MCPClientManager
 # ---------------------------------------------------------------------------
+
 
 class MCPClientManager:
     """
     Manages client connections to MCP servers.
     Wraps tool calls with security layers: Permissions, Firewall, and Logging.
     """
+
     def __init__(
         self,
         firewall: PromptInjectionFirewall,
@@ -51,11 +55,11 @@ class MCPClientManager:
         self.firewall = firewall
         self.enforcer = permission_enforcer
         self.emitter = event_emitter
-        
+
         # State
         # In a real MCP setup, we'd hold stdio subprocesses or SSE client connections here
         self.servers: dict[str, Any] = {}
-        
+
         # Circuit Breaker state: server_tool -> list of failure timestamps
         self._failures: dict[str, list[float]] = defaultdict(list)
         self._circuit_open: set[str] = set()
@@ -66,21 +70,30 @@ class MCPClientManager:
         return {
             "web_tools": ["web_search", "web_fetch", "extract_links", "screenshot_page"],
             "code_tools": ["run_python", "lint_code", "read_file"],
-            "security_tools": ["scan_content", "check_permission", "get_agent_trust", "report_anomaly"],
+            "security_tools": [
+                "scan_content",
+                "check_permission",
+                "get_agent_trust",
+                "report_anomaly",
+            ],
         }
 
-    async def call_tool(self, server: str, tool: str, params: dict[str, Any], agent_id: str) -> ToolResult:
+    async def call_tool(
+        self, server: str, tool: str, params: dict[str, Any], agent_id: str
+    ) -> ToolResult:
         """
         Execute an MCP tool with full security wrapping.
         """
         circuit_key = f"{server}::{tool}"
-        
+
         # 1. Check Circuit Breaker
         if circuit_key in self._circuit_open:
-            return ToolResult(success=False, result=None, latency_ms=0, error="Circuit Breaker OPEN")
+            return ToolResult(
+                success=False, result=None, latency_ms=0, error="Circuit Breaker OPEN"
+            )
 
         start_time = time.monotonic()
-        
+
         try:
             # 2. Permission Check
             # Assume tool names map loosely to resource types
@@ -91,7 +104,7 @@ class MCPClientManager:
                     agent_id=agent_id,
                     severity="HIGH",
                     details={"action": "tool_call_denied", "tool": tool},
-                    source="mcp_client"
+                    source="mcp_client",
                 )
                 raise PermissionError(f"Agent {agent_id} lacks permission for {resource}")
 
@@ -103,8 +116,8 @@ class MCPClientManager:
 
             # 4. Actual Tool Execution (Mocked RPC)
             logger.info("Executing MCP tool [%s:%s] for agent %s", server, tool, agent_id)
-            await asyncio.sleep(0.1) # Simulating network/execution latency
-            
+            await asyncio.sleep(0.1)  # Simulating network/execution latency
+
             # Mocking the actual server responses based on tool name for the demo
             raw_result: Any = {"status": "success", "data": "Mocked tool execution result."}
             if tool == "web_fetch":
@@ -112,37 +125,37 @@ class MCPClientManager:
             elif tool == "run_python":
                 if "plan:" in params.get("code", ""):
                     raise Exception("Container execution failed: Permission denied")
-            
+
             # 5. Output Firewall Scan
             result_str = json.dumps(raw_result)
             scan_out = await self.firewall.scan(result_str, agent_id, context=f"tool_output:{tool}")
-            
+
             # Use sanitized output
-            final_result = scan_out.sanitized_content if scan_out.sanitized_content != result_str else raw_result
-            
+            final_result = (
+                scan_out.sanitized_content
+                if scan_out.sanitized_content != result_str
+                else raw_result
+            )
+
             latency = int((time.monotonic() - start_time) * 1000)
-            
+
             # Reset circuit breaker on success
             self._failures[circuit_key].clear()
-            
-            return ToolResult(
-                success=True,
-                result=final_result,
-                latency_ms=latency
-            )
-            
+
+            return ToolResult(success=True, result=final_result, latency_ms=latency)
+
         except Exception as exc:
             latency = int((time.monotonic() - start_time) * 1000)
             logger.error("Tool execution failed [%s]: %s", circuit_key, exc)
-            
+
             # Record failure
             now = time.time()
             self._failures[circuit_key].append(now)
-            
+
             # Keep only failures in last 60s
             recent_failures = [t for t in self._failures[circuit_key] if now - t < 60.0]
             self._failures[circuit_key] = recent_failures
-            
+
             # Trip circuit breaker: 3 failures in 60s
             if len(recent_failures) >= 3:
                 logger.critical("Tripping circuit breaker for %s", circuit_key)
@@ -151,12 +164,7 @@ class MCPClientManager:
                     agent_id=agent_id,
                     severity="CRITICAL",
                     details={"action": "circuit_breaker_tripped", "tool": circuit_key},
-                    source="mcp_client"
+                    source="mcp_client",
                 )
-                
-            return ToolResult(
-                success=False,
-                result=None,
-                latency_ms=latency,
-                error=str(exc)
-            )
+
+            return ToolResult(success=False, result=None, latency_ms=latency, error=str(exc))

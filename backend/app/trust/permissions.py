@@ -14,7 +14,7 @@ Default permission matrix:
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from backend.app.trust.models import AgentRole, AgentStatus, Permission, ResourceType
@@ -58,15 +58,9 @@ class AgentSuspended(PermissionDenied):
 
 #: Maps each AgentRole to the set of ResourceTypes granted by default.
 DEFAULT_PERMISSION_MATRIX: dict[AgentRole, frozenset[ResourceType]] = {
-    AgentRole.PLANNER: frozenset(
-        {ResourceType.AGENT_SPAWN, ResourceType.MEMORY}
-    ),
-    AgentRole.EXECUTOR: frozenset(
-        {ResourceType.WEB, ResourceType.CODE, ResourceType.MEMORY}
-    ),
-    AgentRole.VALIDATOR: frozenset(
-        {ResourceType.MEMORY}
-    ),
+    AgentRole.PLANNER: frozenset({ResourceType.AGENT_SPAWN, ResourceType.MEMORY}),
+    AgentRole.EXECUTOR: frozenset({ResourceType.WEB, ResourceType.CODE, ResourceType.MEMORY}),
+    AgentRole.VALIDATOR: frozenset({ResourceType.MEMORY}),
     AgentRole.SENTINEL: frozenset(ResourceType),  # ALL resources
 }
 
@@ -115,15 +109,11 @@ class PermissionEnforcer:
     # Cache management
     # ------------------------------------------------------------------
 
-    def _cache_permission(
-        self, agent_id: str, resource: ResourceType, granted: bool
-    ) -> None:
+    def _cache_permission(self, agent_id: str, resource: ResourceType, granted: bool) -> None:
         """Update the in-process cache for a single permission entry."""
         self._cache.setdefault(agent_id, {})[resource] = granted
 
-    def _get_cached(
-        self, agent_id: str, resource: ResourceType
-    ) -> bool | None:
+    def _get_cached(self, agent_id: str, resource: ResourceType) -> bool | None:
         """Return the cached permission state, or None if not cached."""
         return self._cache.get(agent_id, {}).get(resource)
 
@@ -143,9 +133,7 @@ class PermissionEnforcer:
     # Default-matrix bootstrap
     # ------------------------------------------------------------------
 
-    async def apply_default_permissions(
-        self, agent_id: str, role: AgentRole
-    ) -> list[Permission]:
+    async def apply_default_permissions(self, agent_id: str, role: AgentRole) -> list[Permission]:
         """
         Persist the default permission set for a role to Neo4j.
 
@@ -193,9 +181,7 @@ class PermissionEnforcer:
     # Core enforcement API
     # ------------------------------------------------------------------
 
-    async def check_permission(
-        self, agent_id: str, resource: ResourceType
-    ) -> None:
+    async def check_permission(self, agent_id: str, resource: ResourceType) -> None:
         """
         Assert that an agent is permitted to access a resource.
 
@@ -236,9 +222,7 @@ class PermissionEnforcer:
 
         # 3. Database lookup
         permissions = await self._graph.get_agent_permissions(agent_id)
-        resource_map: dict[ResourceType, bool] = {
-            p.resource: p.granted for p in permissions
-        }
+        resource_map: dict[ResourceType, bool] = {p.resource: p.granted for p in permissions}
 
         # Refresh cache for all loaded permissions
         for res, granted in resource_map.items():
@@ -335,9 +319,7 @@ class PermissionEnforcer:
 
     def _record_violation(self, agent_id: str, resource: ResourceType) -> None:
         """Increment the in-process violation counter for an agent."""
-        self._violation_counts[agent_id] = (
-            self._violation_counts.get(agent_id, 0) + 1
-        )
+        self._violation_counts[agent_id] = self._violation_counts.get(agent_id, 0) + 1
         logger.warning(
             "Permission violation #%d: agent=%s resource=%s",
             self._violation_counts[agent_id],
@@ -345,9 +327,7 @@ class PermissionEnforcer:
             resource.value,
         )
 
-    async def get_permission_summary(
-        self, agent_id: str
-    ) -> dict[str, bool]:
+    async def get_permission_summary(self, agent_id: str) -> dict[str, bool]:
         """
         Return a resource → granted mapping for all resources for an agent.
 

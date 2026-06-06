@@ -23,30 +23,38 @@ router = APIRouter(prefix="/api/security", tags=["Security"])
 # Dependencies
 # ---------------------------------------------------------------------------
 
+
 def get_event_emitter(request: Request) -> SecurityEventEmitter:
     return request.app.state.event_emitter
+
 
 def get_healing_orchestrator(request: Request) -> SelfHealingOrchestrator:
     return request.app.state.healing_orchestrator
 
+
 def get_recovery_manager(request: Request) -> RecoveryManager:
     return request.app.state.recovery_manager
+
 
 def get_redis(request: Request) -> Any:
     return request.app.state.redis
 
+
 # ---------------------------------------------------------------------------
 # Models
 # ---------------------------------------------------------------------------
+
 
 class EventStats(BaseModel):
     total_events: int
     by_severity: dict[str, int]
     by_type: dict[str, int]
 
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
+
 
 @router.get("/events")
 async def get_recent_events(
@@ -60,7 +68,7 @@ async def get_recent_events(
     try:
         sev_enum = EventSeverity(min_severity) if min_severity else None
         type_enum = EventType(event_type) if event_type else None
-        
+
         events = await emitter.get_recent_events(
             limit=limit,
             min_severity=sev_enum,
@@ -71,6 +79,7 @@ async def get_recent_events(
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
+
 @router.get("/events/stats", response_model=EventStats)
 async def get_event_stats(
     emitter: SecurityEventEmitter = Depends(get_event_emitter),
@@ -79,14 +88,14 @@ async def get_event_stats(
     try:
         # Fetch a large chunk to aggregate
         events = await emitter.get_recent_events(limit=500)
-        
+
         by_severity = {"LOW": 0, "MEDIUM": 0, "HIGH": 0, "CRITICAL": 0}
         by_type: dict[str, int] = {}
-        
+
         for e in events:
             by_severity[e.severity.value] += 1
             by_type[e.event_type.value] = by_type.get(e.event_type.value, 0) + 1
-            
+
         return EventStats(
             total_events=len(events),
             by_severity=by_severity,
@@ -94,6 +103,7 @@ async def get_event_stats(
         )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
 
 @router.get("/firewall/stats")
 async def get_firewall_stats(
@@ -106,7 +116,9 @@ async def get_firewall_stats(
         events = await emitter.get_recent_events(limit=500)
 
         total_scans = len(events)
-        blocked_scans = sum(1 for e in events if e.event_type.value in ("BLOCKED", "THREAT_DETECTED"))
+        blocked_scans = sum(
+            1 for e in events if e.event_type.value in ("BLOCKED", "THREAT_DETECTED")
+        )
         block_rate = round(blocked_scans / total_scans, 3) if total_scans > 0 else 0.0
 
         # Count by event type for top threats
@@ -116,8 +128,7 @@ async def get_firewall_stats(
             type_counts[t] = type_counts.get(t, 0) + 1
 
         top_threats = [
-            {"type": k, "count": v}
-            for k, v in sorted(type_counts.items(), key=lambda x: -x[1])
+            {"type": k, "count": v} for k, v in sorted(type_counts.items(), key=lambda x: -x[1])
         ][:5]
 
         return {
@@ -128,6 +139,7 @@ async def get_firewall_stats(
         }
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
 
 @router.get("/anomalies")
 async def get_current_anomalies(
@@ -141,6 +153,7 @@ async def get_current_anomalies(
         return status["agent_health"]
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
 
 @router.get("/recovery/history")
 async def get_recovery_history(
