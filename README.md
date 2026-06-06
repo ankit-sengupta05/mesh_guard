@@ -1,97 +1,144 @@
-# AgentOps Security Mesh 🛡️
+<div align="center">
+  <img src="https://raw.githubusercontent.com/ankit-sengupta05/mesh_guard/main/frontend/public/vite.svg" width="100" />
+  <h1 align="center">🛡️ AgentOps Security Mesh</h1>
+  <p align="center">
+    <strong>The Self-Healing, Graph-Trusted, AI Swarm Framework</strong>
+    <br />
+    A resilient LangGraph-based orchestrator secured by a Prompt Injection Firewall, Neo4j Trust Graphs, and real-time Anomaly Detection.
+  </p>
 
-**AgentOps Security Mesh** (Mesh Guard) is an AI Security Operating System designed to secure, monitor, and heal multi-agent AI swarms in real-time. It acts as an overarching security supervisor that detects anomalies, prevents adversarial attacks, and automatically recovers compromised agents without human intervention.
+  <p align="center">
+    <a href="https://github.com/ankit-sengupta05/mesh_guard/actions"><img src="https://img.shields.io/github/actions/workflow/status/ankit-sengupta05/mesh_guard/ci.yml?branch=main&label=Build%20%26%20Security&style=for-the-badge&color=2ea44f" alt="Build Status"></a>
+    <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.11-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python Version"></a>
+    <a href="https://react.dev"><img src="https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React"></a>
+    <a href="https://neo4j.com"><img src="https://img.shields.io/badge/Neo4j-Trust%20Graph-018bff?style=for-the-badge&logo=neo4j&logoColor=white" alt="Neo4j"></a>
+    <a href="https://redis.io"><img src="https://img.shields.io/badge/Redis-Memory-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis"></a>
+  </p>
+</div>
 
-## 🌟 Key Features
+<hr />
 
-*   **Real-time Threat Detection:** Continuous monitoring of agent memory, prompt payloads, and tool execution to catch prompt injections, memory poisoning, and identity spoofing.
-*   **Dynamic Trust Graph (Neo4j):** Visual and programmatic mapping of agent-to-agent interactions, tracking permission edges and dynamic trust scores based on behavioral heuristics.
-*   **Self-Healing Engine:** An autonomous 8-step recovery protocol (Pause → Snapshot → Analyze → Spawn → Restore → Replay → Verify → Report) that isolates compromised agents and transparently replaces them.
-*   **Red-Team Attack Simulator:** Built-in attack vectors to simulate zero-day exploits, memory overrides, and tool hijacking against the swarm to validate defenses.
-*   **Live Dashboard:** A beautiful, dark-themed React/D3 frontend for real-time visibility into the mesh network via WebSockets.
+## ✨ Features
 
-## 🏗️ Architecture
+- 🧠 **LangGraph Swarm Orchestration**: Dynamic creation and interaction of agents (Planner, Coder, Validator, Sentinel).
+- 🔥 **Prompt Injection Firewall**: Real-time evaluation of inputs against heuristic and LLM-based injection patterns.
+- 🕸️ **Neo4j Trust Graph**: Dynamic trust modeling. Agents earn or lose trust based on output validity. Below-threshold agents are sandboxed.
+- 💊 **Self-Healing Daemon**: Automated snapshotting and rollback of compromised agents using isolated memory boundaries.
+- 🎯 **Attack Simulator**: Built-in endpoints to safely simulate API poisonings, context window overflows, and prompt injections to test system resilience.
+- ⚙️ **Hot-Swappable LLMs**: Instantly switch between OpenAI, Azure, and local LM Studio models mid-execution via the UI.
+- 🛡️ **Iron-Clad Git Hooks**: Fully automated secret masking, trailing-whitespace purging, and Babel/Flake8 syntax compilation on every commit.
 
-The system is built on a high-performance, asynchronous tech stack:
+---
 
-1.  **Frontend (UI/UX):** React, Vite, Tailwind CSS, Zustand (state management), and D3.js (interactive force-directed trust graph).
-2.  **Backend (API & Orchestration):** FastAPI (Python), LangGraph (agent orchestration), and WebSockets for real-time telemetry.
-3.  **Data & State:**
-    *   **Neo4j:** Stores the static and dynamic relationships between agents (Trust Topology).
-    *   **Redis:** High-throughput Pub/Sub for routing security events, handling memory snapshots, and broadcasting websocket payloads.
+## 🏗️ Architecture Stack
 
-```mermaid
-graph TD
-    A[Frontend Dashboard] <-->|WebSockets| B(FastAPI Backend)
-    B --> C{Security Mesh Orchestrator}
-    C --> D[Anomaly Detector]
-    C --> E[Self-Healing Engine]
-    C --> F[LangGraph Agent Swarm]
-    F --> G[(Redis - Memory & Pub/Sub)]
-    C --> H[(Neo4j - Trust Graph)]
-```
+| Component | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Frontend** | React, Vite, Zustand, Tailwind | Dashboard for monitoring agents, threats, and trust graphs. |
+| **Backend** | FastAPI, Python 3.11 | API Gateway, Swarm Control, and Security Event routing. |
+| **AI Engine** | LangGraph, LangChain | Managing agent state, cyclic interactions, and tool calling. |
+| **Trust Layer** | Neo4j | Graph database representing nodes (agents) and edges (trust metrics). |
+| **Memory** | Redis | Ephemeral and snapshotted memory management for rollback capabilities. |
+
+---
 
 ## 🚀 Getting Started
 
-### Prerequisites
+### 1️⃣ Prerequisites
 
-*   Python 3.10+
-*   Node.js 18+
-*   Neo4j (Running locally or via Docker)
-*   Redis (Running locally or via Docker)
+Ensure you have the following installed:
+- **Node.js** (v20+)
+- **Python** (v3.11+)
+- **Redis** Server (Running on port `6379`)
+- **Neo4j** Database (Running locally or via AuraDB)
 
-### 1. Setup Services (Docker)
+### 2️⃣ Installation
 
-```bash
-# Start Redis
-docker run -d --name redis-mesh -p 6379:6379 redis:alpine
-
-# Start Neo4j
-docker run -d --name neo4j-mesh -p 7474:7474 -p 7687:7687 -e NEO4J_AUTH=neo4j/password neo4j:latest
-```
-
-### 2. Backend Setup
+Clone the repository and set up the environments:
 
 ```bash
-cd backend
+# Clone the repository
+git clone https://github.com/ankit-sengupta05/mesh_guard.git
+cd mesh_guard
+
+# Set up Python Backend
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # On Windows: .\venv\Scripts\activate
 pip install -r requirements.txt
 
-# Start the FastAPI server
-python -m uvicorn app.main:app --reload
-```
-
-### 3. Frontend Setup
-
-```bash
+# Set up React Frontend
 cd frontend
 npm install
+cd ..
+```
 
-# Start the Vite dev server
+### 3️⃣ Environment Variables
+
+Copy the example environment file and configure your keys:
+
+```bash
+cp .env.example .env
+```
+*Ensure you update the `.env` file with your `OPENAI_API_KEY`, `NEO4J_URI`, and `REDIS_URL`.*
+
+### 4️⃣ Run the Application
+
+You can start both the backend and frontend development servers.
+
+**Start the Backend:**
+```bash
+python -m uvicorn backend.app.main:app --reload --port 8000
+```
+
+**Start the Frontend:**
+```bash
+cd frontend
 npm run dev
 ```
 
-### 4. Usage
-
-1.  Open your browser to `http://localhost:5173`.
-2.  The backend will automatically bootstrap a set of default agents (Planner, Executors, Validators).
-3.  Navigate to the **Attack Simulator** tab to launch payloads against the swarm.
-4.  Watch the **Self-Healing Engine** detect the anomalies, suspend the affected agents, and spawn clean replacements.
-5.  View the real-time topology updates in the **Trust Graph**.
-
-## 🛡️ The 8-Step Self-Healing Protocol
-
-When the Anomaly Detector flags an agent with a critical Z-score deviation, the Self-Healing Engine takes over:
-
-1.  **PAUSE**: Suspend the compromised agent's execution immediately (tracked in Neo4j).
-2.  **SNAPSHOT**: Capture the current corrupted memory state for forensic analysis.
-3.  **ANALYZE**: Determine the last known good memory snapshot from Redis.
-4.  **SPAWN**: Provision a new, clean agent with an inherited cautious trust score.
-5.  **RESTORE**: Load the safe memory snapshot into the new agent's context.
-6.  **REPLAY**: Fast-forward safe pending transactions via LangGraph edges.
-7.  **VERIFY**: Check integrity against active validation nodes.
-8.  **REPORT**: Broadcast the recovery success via WebSockets to update the dashboard.
+The dashboard will be available at `http://localhost:5173`.
 
 ---
-*AgentOps Security Mesh — Securing the Swarm*
+
+## 🔌 API Endpoints
+
+The FastAPI backend exposes the following core endpoints to manage the swarm and security mesh:
+
+### 🧩 Swarm & Agents
+| Method | Endpoint | Description |
+| :---: | :--- | :--- |
+| <kbd>POST</kbd> | `/api/tasks` | Submit a new multi-step task to the LangGraph orchestrator. |
+| <kbd>GET</kbd> | `/api/agents` | Retrieve the status and identity of all active agents. |
+| <kbd>POST</kbd> | `/api/agents/{agent_id}/pause` | Manually suspend an agent from participating in the swarm. |
+
+### 🛡️ Security & Trust
+| Method | Endpoint | Description |
+| :---: | :--- | :--- |
+| <kbd>GET</kbd> | `/api/security/events` | Stream real-time security events (WebSocket available). |
+| <kbd>GET</kbd> | `/api/trust/graph` | Export the current Neo4j trust mappings for visualization. |
+| <kbd>POST</kbd> | `/api/healing/rollback/{agent_id}`| Force restore an agent's memory to its last clean snapshot. |
+
+### 🛠️ Configuration & Simulation
+| Method | Endpoint | Description |
+| :---: | :--- | :--- |
+| <kbd>POST</kbd> | `/api/settings/llm` | Hot-swap the underlying LLM provider (Azure/OpenAI/LMStudio). |
+| <kbd>POST</kbd> | `/api/simulator/attack/{scenario}` | Launch a simulated attack (e.g. `PROMPT_INJECTION_BASIC`). |
+| <kbd>GET</kbd> | `/api/health` | Service health check. |
+
+---
+
+## 🔒 Git Hooks & Security Compliance
+
+This project ships with a strict, self-contained CI/CD and pre-commit pipeline.
+
+By running `./setup_git_hooks.ps1` (or installing via `pre-commit install`), the following validations are run **before** every commit:
+- 🚫 **Secret Masking:** Automatically detects and blocks API keys or passwords.
+- 🧹 **Code Formatting:** Enforces `black` (100-chars) and `flake8` compliance.
+- ⚡ **Syntax Checking:** Compiles all `.ts`/`.tsx` via Babel and checks Python ASTs.
+- 📦 **Lockfile Verification:** Prevents dependency drift.
+
+---
+
+<div align="center">
+  <i>Built with ❤️ for resilient and secure autonomous systems.</i>
+</div>
