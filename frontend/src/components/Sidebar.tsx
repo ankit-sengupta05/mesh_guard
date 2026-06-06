@@ -2,7 +2,7 @@
  * Sidebar — Tab navigation for the security dashboard.
  */
 
-import { Shield, Bot, Network, Zap, RotateCcw } from 'lucide-react'
+import { Shield, Bot, Network, Zap, RotateCcw, Settings } from 'lucide-react'
 import { useMeshStore } from '@/store/useMeshStore'
 import type { MeshStore } from '@/store/useMeshStore'
 import { clsx } from 'clsx'
@@ -18,7 +18,7 @@ const NAV_ITEMS: { tab: Tab; label: string; icon: React.ElementType; badgeKey?: 
 ]
 
 export function Sidebar() {
-  const { activeTab, setActiveTab, stats } = useMeshStore()
+  const { activeTab, setActiveTab, stats, setSettingsOpen } = useMeshStore()
 
   return (
     <nav className="w-16 lg:w-52 shrink-0 flex flex-col border-r border-mesh-border bg-mesh-surface/40 backdrop-blur-xl">
@@ -65,8 +65,15 @@ export function Sidebar() {
         })}
       </div>
 
-      {/* Bottom version tag */}
-      <div className="p-3 border-t border-mesh-border">
+      {/* Bottom version tag & settings */}
+      <div className="p-3 border-t border-mesh-border flex flex-col items-center lg:items-stretch gap-3">
+        <button
+          onClick={() => setSettingsOpen(true)}
+          className="group flex items-center justify-center lg:justify-start gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-mesh-text-dim hover:text-mesh-text hover:bg-mesh-panel"
+        >
+          <Settings size={17} className="shrink-0 transition-transform duration-150 group-hover:scale-110" />
+          <span className="hidden lg:inline truncate">Settings</span>
+        </button>
         <div className="hidden lg:block text-[10px] text-mesh-text-dim font-mono text-center">
           Security OS v1.0
         </div>

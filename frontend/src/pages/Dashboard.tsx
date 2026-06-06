@@ -7,11 +7,13 @@ import { AgentGrid } from '../components/AgentGrid';
 import { TrustGraphViz } from '../components/TrustGraphViz';
 import { AttackSimulator } from '../components/AttackSimulator';
 import { SelfHealingEngine } from '../components/SelfHealingEngine';
+import { SettingsModal } from '../components/SettingsModal';
 import { MetricsBarSkeleton, ThreatFeedSkeleton, AgentGridSkeleton } from '../components/LoadingSkeletons';
 import {
   Shield, LayoutDashboard, Crosshair, Network, List,
-  RefreshCw, Download, Sun, Moon, Keyboard, Menu, X
+  RefreshCw, Download, Sun, Moon, Keyboard, Menu, X, Settings
 } from 'lucide-react';
+import { useMeshStore } from '../store/useMeshStore';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws/dashboard';
@@ -36,6 +38,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onShowShortcuts,
 }) => {
   const { events, connected, metrics } = useSecurityEvents(WS_URL);
+  const { setSettingsOpen } = useMeshStore();
 
   const [activeTab, setActiveTab] = useState('overview');
   const [agents, setAgents] = useState<any[]>([]);
@@ -111,6 +114,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className={`flex h-screen ${bg} overflow-hidden`}>
+      <SettingsModal />
 
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
@@ -168,6 +172,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Footer actions */}
         <div className={`p-3 border-t ${isDark ? 'border-gray-800' : 'border-gray-200'} space-y-2`}>
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className={`w-full flex items-center px-3 py-2 rounded-lg text-sm transition-colors ${
+              isDark ? 'text-gray-400 hover:bg-gray-800 hover:text-gray-200' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Settings size={16} />
+            <span className="ml-2">LLM Settings</span>
+          </button>
           <button
             onClick={handleExport}
             className={`w-full flex items-center px-3 py-2 rounded-lg text-sm transition-colors ${

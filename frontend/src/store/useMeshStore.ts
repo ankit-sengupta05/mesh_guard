@@ -126,6 +126,8 @@ export interface MeshStore {
   setSelectedAgent: (id: string | null) => void
   activeTab: 'threats' | 'agents' | 'trust' | 'attacks' | 'recovery'
   setActiveTab: (tab: MeshStore['activeTab']) => void
+  isSettingsOpen: boolean
+  setSettingsOpen: (isOpen: boolean) => void
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -250,6 +252,8 @@ export const useMeshStore = create<MeshStore>()(
         set({ selectedAgentId }, false, 'setSelectedAgent'),
       activeTab: 'threats',
       setActiveTab: (activeTab: MeshStore['activeTab']) => set({ activeTab }, false, 'setActiveTab'),
+      isSettingsOpen: false,
+      setSettingsOpen: (isSettingsOpen: boolean) => set({ isSettingsOpen }, false, 'setSettingsOpen'),
     }),
     { name: 'AgentOpsMesh' },
   ),

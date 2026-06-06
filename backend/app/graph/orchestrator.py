@@ -18,6 +18,7 @@ Graph structure:
 from __future__ import annotations
 
 import logging
+import uuid
 from typing import AsyncIterator
 
 from langgraph.checkpoint.memory import MemorySaver
@@ -46,12 +47,14 @@ from backend.app.graph.nodes import (
     make_validate_output_node,
 )
 from backend.app.graph.state import SwarmState, initial_state
+from backend.app.api.routes.settings import LLMSettings
 
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Helper node: next_step_node
 # ---------------------------------------------------------------------------
+
 
 async def next_step_node(state: SwarmState) -> dict:
     """
@@ -71,6 +74,7 @@ async def halt_node(state: SwarmState) -> dict:
 # ---------------------------------------------------------------------------
 # SwarmOrchestrator
 # ---------------------------------------------------------------------------
+
 
 class SwarmOrchestrator:
     """
@@ -101,10 +105,23 @@ class SwarmOrchestrator:
         self.firewall = firewall
         self.emitter = event_emitter
 
+        # Initialize the agents and graph
+        self.rebuild_swarm(None)
+
+    def rebuild_swarm(self, llm_settings: LLMSettings | None) -> None:
+        """
+        Re-initialize the entire agent swarm using the provided LLM settings.
+        Useful for hot-swapping between Azure, OpenAI, and local LM Studio models.
+        """
+        logger.info(
+            "Rebuilding swarm with settings: %s",
+            llm_settings.provider if llm_settings else "default",
+        )
+
         # 1. Build LLMs
-        planner_llm = build_llm(temperature=0.2)
-        executor_llm = build_llm(temperature=0.0)
-        sentinel_llm = build_llm(temperature=0.0)
+        planner_llm = build_llm(settings=llm_settings, temperature=0.2)
+        executor_llm = build_llm(settings=llm_settings, temperature=0.0)
+        sentinel_llm = build_llm(settings=llm_settings, temperature=0.0)
 
         # 2. Build AgentExecutors
         logger.info("Initializing AgentExecutors...")
@@ -113,7 +130,9 @@ class SwarmOrchestrator:
         self.code_agent = create_code_agent(executor_llm, self.firewall, self.memory)
         self.api_agent = create_api_agent(executor_llm, self.firewall, self.trust, self.permissions)
         self.validator_agent = create_validator_agent(executor_llm, self.memory)
-        self.sentinel_agent = create_sentinel_agent(sentinel_llm, self.firewall, self.trust, self.memory, self.emitter)
+        self.sentinel_agent = create_sentinel_agent(
+            sentinel_llm, self.firewall, self.trust, self.memory, self.emitter
+        )
 
         # 3. Create NodeContext
         self.ctx = NodeContext(
@@ -161,10 +180,10 @@ class SwarmOrchestrator:
             route_after_sentinel,
             {
                 "execute_step": "next_step",  # Threat level ok, move to next step logic
-                "recovery": "recovery",       # Anomaly detected -> recover
-                "halt": "halt",               # CRITICAL threat -> abort
-                "__end__": "finalize"         # Finished all steps
-            }
+                "recovery": "recovery",  # Anomaly detected -> recover
+                "halt": "halt",  # CRITICAL threat -> abort
+                "__end__": "finalize",  # Finished all steps
+            },
         )
 
         # Next Step Logic -> either loop back to execute_step or finalize
@@ -172,18 +191,14 @@ class SwarmOrchestrator:
             if state.get("current_step", 0) >= len(state.get("plan", [])):
                 return "finalize"
             return "execute_step"
-            
+
         builder.add_conditional_edges(
-            "next_step",
-            _route_next_step,
-            {"execute_step": "execute_step", "finalize": "finalize"}
+            "next_step", _route_next_step, {"execute_step": "execute_step", "finalize": "finalize"}
         )
 
         # Recovery Logic
         builder.add_conditional_edges(
-            "recovery",
-            route_after_recovery,
-            {"execute_step": "execute_step", "halt": "halt"}
+            "recovery", route_after_recovery, {"execute_step": "execute_step", "halt": "halt"}
         )
 
         # Terminal edges

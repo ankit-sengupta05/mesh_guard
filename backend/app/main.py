@@ -14,6 +14,7 @@ import time
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 import redis.asyncio as aioredis
@@ -35,8 +36,7 @@ from backend.app.security.simulator import AttackSimulator
 from backend.app.trust.graph import AsyncNeo4jTrustGraph
 from backend.app.trust.permissions import PermissionEnforcer
 
-# API Routers
-from backend.app.api.routes import agents, security, tasks, healing
+from backend.app.api.routes import agents, security, tasks, healing, settings
 from backend.app.api.websocket import manager as ws_manager
 from backend.api import simulator_routes
 
@@ -51,6 +51,7 @@ logger = logging.getLogger("agentops")
 # Background Tasks
 # ---------------------------------------------------------------------------
 
+
 async def redis_event_subscriber(redis: aioredis.Redis, ws_mgr):
     """
     Background task that subscribes to the Redis Pub/Sub channel for security events
@@ -59,7 +60,7 @@ async def redis_event_subscriber(redis: aioredis.Redis, ws_mgr):
     pubsub = redis.pubsub()
     await pubsub.subscribe(SECURITY_EVENTS_CHANNEL)
     logger.info("Subscribed to Redis channel: %s", SECURITY_EVENTS_CHANNEL)
-    
+
     try:
         while True:
             message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
@@ -74,27 +75,29 @@ async def redis_event_subscriber(redis: aioredis.Redis, ws_mgr):
     finally:
         await pubsub.unsubscribe(SECURITY_EVENTS_CHANNEL)
 
+
 # ---------------------------------------------------------------------------
 # Lifespan
 # ---------------------------------------------------------------------------
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application startup and shutdown lifecycle hooks."""
     logger.info("Starting AgentOps Security Mesh...")
-    
+
     # 1. Initialize Redis
     redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
     app.state.redis = aioredis.from_url(redis_url, decode_responses=False)
-    
+
     # 2. Initialize Neo4j Trust Graph
     neo4j_uri = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
     neo4j_user = os.environ.get("NEO4J_USER", "neo4j")
     neo4j_password = os.environ.get("NEO4J_PASSWORD", "password")
-    
+
     trust_graph = AsyncNeo4jTrustGraph(neo4j_uri, neo4j_user, neo4j_password)
     app.state.trust_graph = trust_graph
-    
+
     # 3. Initialize Core Managers
     app.state.event_emitter = SecurityEventEmitter(app.state.redis)
     # MemoryBoundaryEnforcer enforces per-agent key-prefix isolation
@@ -105,13 +108,13 @@ async def lifespan(app: FastAPI):
     )
     app.state.snapshot_manager = MemorySnapshotManager(app.state.memory_manager)
     app.state.permission_enforcer = PermissionEnforcer(trust_graph)
-    
+
     # 4. Initialize Security Firewall
     app.state.firewall = PromptInjectionFirewall(
         event_emitter=app.state.event_emitter,
         semantic_enabled=os.environ.get("ENABLE_SEMANTIC_FIREWALL", "false").lower() == "true",
     )
-    
+
     # 5. Initialize Self-Healing Components
     anomaly_detector = AnomalyDetector(app.state.redis)
     app.state.recovery_manager = RecoveryManager(
@@ -124,7 +127,7 @@ async def lifespan(app: FastAPI):
         anomaly_detector=anomaly_detector,
         recovery_manager=app.state.recovery_manager,
     )
-    
+
     # 6. Initialize LangGraph Orchestrator
     app.state.orchestrator = SwarmOrchestrator(
         memory_manager=app.state.memory_manager,
@@ -134,7 +137,7 @@ async def lifespan(app: FastAPI):
         firewall=app.state.firewall,
         event_emitter=app.state.event_emitter,
     )
-    
+
     # 7. Initialize Attack Simulator
     app.state.simulator = AttackSimulator(
         firewall=app.state.firewall,
@@ -143,15 +146,21 @@ async def lifespan(app: FastAPI):
         event_emitter=app.state.event_emitter,
         redis_client=app.state.redis,
     )
-    
+
+    # 8. Initialize LLM Settings state
+    from backend.app.api.routes.settings import LLMSettings
+
+    app.state.llm_settings = LLMSettings(provider="azure", base_url="", api_key="", model="")
+
     # --- Startup Actions ---
     try:
         # Initialize Neo4j: open driver connection and create schema indexes.
         await trust_graph.initialize()
         logger.info("Neo4j constraints initialized.")
-        
+
         # Register the initial swarm agents to the Trust Graph
         from backend.app.trust.models import AgentIdentity, AgentRole, AgentStatus
+
         agents_to_register = [
             ("Planner", AgentRole.PLANNER, app.state.orchestrator.planner_agent),
             ("Web", AgentRole.EXECUTOR, app.state.orchestrator.web_agent),
@@ -160,7 +169,7 @@ async def lifespan(app: FastAPI):
             ("Validator", AgentRole.VALIDATOR, app.state.orchestrator.validator_agent),
             ("Sentinel", AgentRole.SENTINEL, app.state.orchestrator.sentinel_agent),
         ]
-        
+
         for name, role, executor in agents_to_register:
             aid = (executor.metadata or {}).get("agent_id")
             if aid:
@@ -169,13 +178,13 @@ async def lifespan(app: FastAPI):
                     name=f"{name}Agent",
                     role=role,
                     trust_score=1.0,
-                    status=AgentStatus.ACTIVE
+                    status=AgentStatus.ACTIVE,
                 )
                 await trust_graph.register_agent(identity)
         logger.info("Initial swarm agents registered to Neo4j.")
     except Exception as exc:
         logger.warning("Failed to initialize Neo4j constraints (Neo4j might be down): %s", exc)
-        
+
     # Wire trust graph so the healing loop can fetch agents from Neo4j
     app.state.healing_orchestrator.attach_graph(trust_graph)
 
@@ -184,17 +193,18 @@ async def lifespan(app: FastAPI):
         redis_event_subscriber(app.state.redis, ws_manager)
     )
     app.state.healing_orchestrator.start()
-    
+
     yield  # Application runs here
-    
+
     # --- Shutdown Actions ---
     logger.info("Shutting down AgentOps Security Mesh...")
     app.state.healing_orchestrator.stop()
     if app.state.redis_subscriber_task:
         app.state.redis_subscriber_task.cancel()
-        
+
     await trust_graph.close()
     await app.state.redis.close()
+
 
 # ---------------------------------------------------------------------------
 # FastAPI App
@@ -216,26 +226,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Request Logging Middleware
 class AgentContextMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         start_time = time.time()
         agent_id = request.headers.get("X-Agent-ID", "external-client")
-        
+
         # We could inject agent_id into request state here
         request.state.agent_id = agent_id
-        
+
         response = await call_next(request)
-        
+
         process_time = time.time() - start_time
         logger.info(
             "%s %s - %s - %.3fs",
             request.method,
             request.url.path,
             response.status_code,
-            process_time
+            process_time,
         )
         return response
+
 
 app.add_middleware(AgentContextMiddleware)
 
@@ -248,10 +260,12 @@ app.include_router(security.router)
 app.include_router(tasks.router)
 app.include_router(healing.router)
 app.include_router(simulator_routes.router)
+app.include_router(settings.router)
 
 # ---------------------------------------------------------------------------
 # Health Check
 # ---------------------------------------------------------------------------
+
 
 @app.get("/health", tags=["System"])
 async def health_check(request: Request):
@@ -279,9 +293,11 @@ async def health_check(request: Request):
     http_status = 503 if status["status"] != "ok" else 200
     return JSONResponse(content=status, status_code=http_status)
 
+
 # ---------------------------------------------------------------------------
 # Global WebSocket endpoints (Fallback/Alias)
 # ---------------------------------------------------------------------------
+
 
 @app.websocket("/ws/dashboard")
 async def dashboard_websocket(websocket: WebSocket):
