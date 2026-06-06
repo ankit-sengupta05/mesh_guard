@@ -1,7 +1,7 @@
 # AgentOps Security Mesh — 3-Minute Demo Video Script
 
-**Total Runtime:** 3:00 minutes  
-**Presenter:** [Your name]  
+**Total Runtime:** 3:00 minutes
+**Presenter:** [Your name]
 **Setup:** Backend running on localhost:8000, React dashboard open at localhost:5173, terminal ready with `demo.py`
 
 ---

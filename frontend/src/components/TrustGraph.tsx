@@ -18,9 +18,9 @@ export function TrustGraph() {
     // Center planner
     const plannerNode = trustNodes.find((n: TrustNode) => n.role === 'planner')
     const executors = trustNodes.filter((n: TrustNode) => n.role !== 'planner')
-    
+
     const data = []
-    
+
     if (plannerNode) {
       data.push({
         ...plannerNode,
@@ -37,7 +37,7 @@ export function TrustGraph() {
       const angle = (i / Math.max(1, executors.length)) * 2 * Math.PI
       const cx = 50 + radius * Math.cos(angle)
       const cy = 50 + radius * Math.sin(angle)
-      
+
       data.push({
         ...node,
         x: cx,
@@ -114,7 +114,7 @@ function CustomTooltip({ active, payload }: any) {
           <span className="font-bold text-sm text-mesh-text">{data.name}</span>
         </div>
         <div className="text-xs text-mesh-text-dim font-mono mb-2">{data.id}</div>
-        
+
         <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-mesh-border">
           <div>
             <div className="text-[10px] text-mesh-text-dim uppercase">Role</div>

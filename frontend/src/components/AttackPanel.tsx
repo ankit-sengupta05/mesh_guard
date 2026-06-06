@@ -65,11 +65,11 @@ export function AttackPanel() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
-        
+
         {/* Controls Column */}
         <div className="flex flex-col gap-3 overflow-y-auto pr-1 scrollbar-thin">
           <h3 className="section-title">Attack Vectors</h3>
-          
+
           {ATTACK_TYPES.map(attack => (
             <div key={attack.id} className="glass-panel p-4 flex flex-col gap-3 group hover:border-mesh-warn/30">
               <div className="flex items-start gap-3">
@@ -81,7 +81,7 @@ export function AttackPanel() {
                   <p className="text-[11px] text-mesh-text-dim mt-0.5">{attack.desc}</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => triggerAttack(attack.id)}
                 disabled={!!loading}
                 className="w-full btn-ghost text-xs justify-center py-1.5 mt-1 border-mesh-border/50 group-hover:border-mesh-warn/30 group-hover:text-mesh-warn"
@@ -102,7 +102,7 @@ export function AttackPanel() {
               </button>
             )}
           </div>
-          
+
           <div className="flex-1 glass-panel overflow-y-auto scrollbar-thin p-1">
             {attackResults.length === 0 ? (
                <div className="h-full flex flex-col items-center justify-center text-mesh-text-dim">
@@ -126,7 +126,7 @@ export function AttackPanel() {
                       </div>
                       <span className="text-[10px] font-mono text-mesh-text-dim">{res.duration_ms}ms</span>
                     </div>
-                    
+
                     <div className="font-mono text-[10px] text-mesh-text-dim bg-black/40 p-2 rounded border border-white/5 truncate" title={res.payload_used}>
                       <span className="text-mesh-warn/50 mr-2">payload:</span>
                       {res.payload_used}

@@ -8,7 +8,7 @@ interface RecoveryTimelineProps {
 
 export const RecoveryTimeline: React.FC<RecoveryTimelineProps> = ({ recentEvents }) => {
   // Filter for recovery events and group them conceptually
-  const recoveryEvents = recentEvents.filter(e => 
+  const recoveryEvents = recentEvents.filter(e =>
     e.event_type === 'RECOVERY_STARTED' || e.event_type === 'RECOVERY_COMPLETE'
   );
 
@@ -35,12 +35,12 @@ export const RecoveryTimeline: React.FC<RecoveryTimelineProps> = ({ recentEvents
               const details = event.details || {};
               const steps = details.steps || ['PAUSE', 'SNAPSHOT', 'ANALYZE', 'SPAWN', 'RESTORE', 'REPLAY', 'VERIFY', 'REPORT'];
               const isSuccess = details.success !== false;
-              
+
               return (
                 <div key={event.event_id} className="border border-gray-800 rounded-lg bg-gray-950 p-3 relative overflow-hidden">
                   {/* Background success/fail glow */}
                   <div className={`absolute top-0 left-0 w-1 h-full ${isSuccess ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                  
+
                   <div className="flex justify-between items-center mb-3 ml-2">
                     <div className="text-xs text-gray-400 font-mono">
                       {new Date(event.timestamp).toLocaleTimeString()}
@@ -59,9 +59,9 @@ export const RecoveryTimeline: React.FC<RecoveryTimelineProps> = ({ recentEvents
                         {details.original_agent_id?.substring(0,8) || 'unknown'}
                       </div>
                     </div>
-                    
+
                     <ArrowRight size={16} className="text-gray-600" />
-                    
+
                     <div className="text-center">
                       <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Replacement</div>
                       <div className="text-xs font-mono bg-green-900/20 text-green-400 border border-green-900/50 px-2 py-1 rounded truncate w-24">

@@ -27,8 +27,8 @@ const MOCK_SCENARIOS: Scenario[] = [
   { name: "SYSTEM_PROMPT_EXFILTRATION", description: "Attempting to steal orchestrator's core instructions.", target: "planner_agent", injection_point: "user_input" }
 ];
 
-export const AttackSimulator: React.FC<AttackSimulatorProps> = ({ 
-  onLaunchAttack, 
+export const AttackSimulator: React.FC<AttackSimulatorProps> = ({
+  onLaunchAttack,
   onRunDemo,
   recentEvents
 }) => {
@@ -69,13 +69,13 @@ export const AttackSimulator: React.FC<AttackSimulatorProps> = ({
             </h2>
             <p className="text-sm text-gray-500 mt-1">Inject adversarial payloads directly into the live mesh.</p>
           </div>
-          
-          <button 
+
+          <button
             onClick={handleDemo}
             disabled={demoRunning}
             className={`flex items-center px-4 py-2 rounded-md font-medium text-sm transition-colors ${
-              demoRunning 
-                ? 'bg-gray-800 text-gray-500 cursor-not-allowed' 
+              demoRunning
+                ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
                 : 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-900/20'
             }`}
           >
@@ -98,11 +98,11 @@ export const AttackSimulator: React.FC<AttackSimulatorProps> = ({
                   {scenario.target}
                 </span>
               </div>
-              
+
               <p className="text-xs text-gray-500 mb-4 flex-1">
                 {scenario.description}
               </p>
-              
+
               <button
                 onClick={() => handleLaunch(scenario.name)}
                 disabled={activeAttack !== null || demoRunning}
@@ -129,12 +129,12 @@ export const AttackSimulator: React.FC<AttackSimulatorProps> = ({
           <Terminal size={16} className="mr-2" />
           Attack Telemetry
         </div>
-        
+
         <div className="p-4 flex-1 overflow-y-auto font-mono text-xs text-gray-300 space-y-4">
           {simResult ? (
             <div className="animate-fade-in">
               <div className="text-blue-400 mb-2">&gt; Attack Payload Injected</div>
-              
+
               <div className="pl-4 border-l border-gray-800 space-y-2">
                 <div><span className="text-gray-500">Scenario:</span> {simResult.scenario}</div>
                 <div><span className="text-gray-500">Target Layer:</span> {simResult.target_agent}</div>
@@ -142,19 +142,19 @@ export const AttackSimulator: React.FC<AttackSimulatorProps> = ({
               </div>
 
               <div className="text-blue-400 mt-4 mb-2">&gt; Mesh Response (Latency: {simResult.detection_latency_ms}ms)</div>
-              
+
               <div className="pl-4 border-l border-gray-800 space-y-3">
                 <div className="flex items-center">
-                  <span className="text-gray-500 w-24">Detected:</span> 
+                  <span className="text-gray-500 w-24">Detected:</span>
                   {simResult.detected ? (
                     <span className="text-green-500 bg-green-500/10 px-2 py-0.5 rounded">YES</span>
                   ) : (
                     <span className="text-red-500 bg-red-500/10 px-2 py-0.5 rounded">NO</span>
                   )}
                 </div>
-                
+
                 <div className="flex items-center">
-                  <span className="text-gray-500 w-24">Blocked:</span> 
+                  <span className="text-gray-500 w-24">Blocked:</span>
                   {simResult.blocked ? (
                     <span className="text-green-500 bg-green-500/10 px-2 py-0.5 rounded">YES</span>
                   ) : (
@@ -168,7 +168,7 @@ export const AttackSimulator: React.FC<AttackSimulatorProps> = ({
                     <span className="text-purple-400">{simResult.security_layer_that_caught_it}</span>
                   </div>
                 )}
-                
+
                 {simResult.recovery_triggered && (
                   <div className="flex items-center mt-2">
                     <ShieldAlert size={14} className="text-orange-500 mr-2 animate-pulse" />

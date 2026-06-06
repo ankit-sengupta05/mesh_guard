@@ -13,19 +13,19 @@ interface MetricsBarProps {
   avgTrust: number;
 }
 
-export const MetricsBar: React.FC<MetricsBarProps> = ({ 
-  connected, 
-  metrics, 
-  agentCount, 
-  avgTrust 
+export const MetricsBar: React.FC<MetricsBarProps> = ({
+  connected,
+  metrics,
+  agentCount,
+  avgTrust
 }) => {
-  const blockRate = metrics.total > 0 
-    ? Math.round(((metrics.critical + metrics.high) / metrics.total) * 100) 
+  const blockRate = metrics.total > 0
+    ? Math.round(((metrics.critical + metrics.high) / metrics.total) * 100)
     : 0;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-      
+
       {/* Total Threats */}
       <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 flex flex-col justify-between">
         <div className="flex justify-between items-center text-gray-400 mb-2">
@@ -71,7 +71,7 @@ export const MetricsBar: React.FC<MetricsBarProps> = ({
         </div>
         <div className="text-3xl font-bold text-gray-100">{avgTrust.toFixed(2)}</div>
         <div className="w-full bg-gray-800 h-1.5 mt-3 rounded-full overflow-hidden">
-          <div 
+          <div
             className={`h-full ${avgTrust > 0.8 ? 'bg-green-500' : 'bg-yellow-500'}`}
             style={{ width: `${avgTrust * 100}%` }}
           />
@@ -88,7 +88,7 @@ export const MetricsBar: React.FC<MetricsBarProps> = ({
         <div className="text-xs text-gray-500 mt-2 z-10">
           Self-healed today
         </div>
-        
+
         {/* Subtle background pulse if there's a recent recovery */}
         {metrics.recoveries > 0 && (
           <div className="absolute inset-0 bg-purple-900/10 animate-pulse z-0"></div>
